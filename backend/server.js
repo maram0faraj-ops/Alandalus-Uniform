@@ -19,10 +19,12 @@ mongoose.connect(process.env.DATABASE_URL)
 const authRoutes = require('./routes/auth');
 const inventoryRoutes = require('./routes/inventory');
 const dashboardRoutes = require('./routes/dashboard');
+const deliveryRoutes = require('./routes/delivery'); // **استيراد المسار الجديد**
 
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/delivery', deliveryRoutes); // **استخدام المسار الجديد**
 
 // تشغيل الخادم
 app.listen(PORT, () => {
