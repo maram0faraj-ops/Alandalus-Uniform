@@ -1,91 +1,54 @@
-import React, { useState } from 'react';
-import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import axios from 'axios';
+    import React, { useState } from 'react';
+    import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+    import api from '../api'; // استيراد الملف الجديد
 
-function LoginPage() {
-  //  لإدارة البيانات التي يدخلها المستخدم useState استخدام
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [error, setError] = useState(''); // لعرض رسائل الخطأ
+    function LoginPage() {
+      const [formData, setFormData] = useState({ email: '', password: '' });
+      const [error, setError] = useState('');
 
-  // هذه الدالة تعمل عند تغيير أي حقل في النموذج
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); // إخفاء الخطأ عند البدء في الكتابة
-  };
+      const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError('');
+      };
 
-  // هذه الدالة تعمل عند الضغط على زر "دخول"
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // منع التحديث التلقائي للصفحة
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          // استخدام api بدلاً من axios مباشرة
+          const response = await api.post('/api/auth/login', formData);
+          localStorage.setItem('token', response.data.token);
+          alert('تم تسجيل الدخول بنجاح!');
+          window.location.href = '/admin/dashboard';
+        } catch (err) {
+          const errorMsg = err.response?.data?.msg || 'حدث خطأ ما، يرجى المحاولة مرة أخرى';
+          setError(errorMsg);
+        }
+      };
 
-    try {
-      // إرسال طلب إلى الخادم باستخدام مكتبة axios
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
-        email: formData.email,
-        password: formData.password,
-      });
-
-      // حفظ التوكن في التخزين المحلي للمتصفح
-      localStorage.setItem('token', response.data.token);
-
-      alert('تم تسجيل الدخول بنجاح!');
-      
-      // إعادة توجيه المستخدم إلى لوحة التحكم
-      window.location.href = '/admin/dashboard';
-
-    } catch (err) {
-      // في حال حدوث خطأ
-      const errorMsg = err.response?.data?.msg || 'حدث خطأ ما، يرجى المحاولة مرة أخرى';
-      setError(errorMsg);
-      console.error('خطأ في تسجيل الدخول:', errorMsg);
+      return (
+        <Container className="mt-5">
+          <Row className="justify-content-md-center">
+            <Col md={6}>
+              <h2 className="text-center mb-4">تسجيل الدخول</h2>
+              {error && <Alert variant="danger">{error}</Alert>}
+              <Form onSubmit={handleSubmit}>
+                <Form.Group className="mb-3">
+                  <Form.Label>البريد الإلكتروني</Form.Label>
+                  <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} required />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>كلمة المرور</Form.Label>
+                  <Form.Control type="password" name="password" value={formData.password} onChange={handleChange} required />
+                </Form.Group>
+                <div className="d-grid">
+                  <Button variant="primary" type="submit">دخول</Button>
+                </div>
+              </Form>
+            </Col>
+          </Row>
+        </Container>
+      );
     }
-  };
 
-  return (
-    <Container className="mt-5">
-      <Row className="justify-content-md-center">
-        <Col md={6}>
-          <h2 className="text-center mb-4">تسجيل الدخول</h2>
-          {/* عرض رسالة الخطأ إذا وجدت */}
-          {error && <Alert variant="danger">{error}</Alert>}
-
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="formBasicEmail">
-              <Form.Label>البريد الإلكتروني</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                placeholder="ادخل البريد الإلكتروني"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formBasicPassword">
-              <Form.Label>كلمة المرور</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                placeholder="كلمة المرور"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <div className="d-grid">
-              <Button variant="primary" type="submit">
-                دخول
-              </Button>
-            </div>
-          </Form>
-        </Col>
-      </Row>
-    </Container>
-  );
-}
-
-export default LoginPage;
+    export default LoginPage;
+    
