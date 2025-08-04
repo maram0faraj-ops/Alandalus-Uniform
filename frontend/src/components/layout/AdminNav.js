@@ -9,15 +9,17 @@ function AdminNav() {
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg">
+    <Navbar bg="dark" variant="dark" expand="lg" className="no-print">
       <Container>
         <Navbar.Brand as={Link} to="/admin/dashboard">لوحة تحكم الأندلس</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>
-            <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>          
-            <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>           </Nav>
+            <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
+            <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
+            <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link> {/* السطر الجديد */}
+          </Nav>
           <Nav>
             <Nav.Link onClick={handleLogout}>تسجيل الخروج</Nav.Link>
           </Nav>

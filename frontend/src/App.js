@@ -3,56 +3,40 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 
 // استيراد المكونات والصفحات
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AddStockPage from './pages/AddStockPage';
+import PrintBarcodesPage from './pages/PrintBarcodesPage';
+import DeliverUniformPage from './pages/DeliverUniformPage'; // استيراد الصفحة الجديدة
 import PrivateRoute from './components/PrivateRoute';
-import AdminLayout from './components/layout/AdminLayout'; // استيراد التخطيط
-import PrintBarcodesPage from './pages/PrintBarcodesPage'; // استيراد
-
-// ... (داخل <Routes>)
+import AdminLayout from './components/layout/AdminLayout';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          {/* المسار العام */}
+          {/* المسارات العامة */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-          {/* ====================================================== */}
-          {/* هنا يتم تغليف جميع صفحات الأدمن بالتخطيط الموحد */}
-          {/* ====================================================== */}
+          {/* صفحات الأدمن والموظفين */}
           <Route 
             path="/admin/dashboard" 
-            element={
-              <PrivateRoute>
-                <AdminLayout>
-                  <AdminDashboard />
-                </AdminLayout>
-              </PrivateRoute>
-            } 
+            element={<PrivateRoute><AdminLayout><AdminDashboard /></AdminLayout></PrivateRoute>} 
           />
           <Route 
             path="/admin/add-stock" 
-            element={
-              <PrivateRoute>
-                <AdminLayout>
-                  <AddStockPage />
-                </AdminLayout>
-              </PrivateRoute>
-            } 
+            element={<PrivateRoute><AdminLayout><AddStockPage /></AdminLayout></PrivateRoute>} 
           />
- 
-<Route  
-    path="/admin/print-barcodes" // المسار الجديد
-    element={
-      <PrivateRoute>
-        <AdminLayout>
-          <PrintBarcodesPage />
-        </AdminLayout>
-      </PrivateRoute>
-    } 
-/>
+          <Route 
+            path="/admin/print-barcodes" 
+            element={<PrivateRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></PrivateRoute>} 
+          />
+          <Route 
+            path="/staff/deliver" // المسار الجديد
+            element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
+          />
           
           {/* المسار الافتراضي */}
           <Route path="*" element={<Navigate to="/login" />} />
