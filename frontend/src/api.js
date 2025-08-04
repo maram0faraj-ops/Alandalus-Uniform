@@ -17,10 +17,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      // لا تقم بإضافة رأس المصادقة لطلبات تسجيل الدخول أو التسجيل
-      if (!config.url.includes('/api/auth/login') && !config.url.includes('/api/auth/register')) {
-        config.headers['Authorization'] = `Bearer ${token}`;
-      }
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },

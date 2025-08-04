@@ -3,7 +3,6 @@
     import api from '../api'; // استيراد الملف الجديد
 
     function AddStockPage() {
-        // ... (بقية الكود الخاص بالـ state والقوائم المنسدلة يبقى كما هو)
         const [formData, setFormData] = useState({
             stage: 'ابتدائي',
             type: 'رسمي',
@@ -41,7 +40,6 @@
       };
 
       return (
-        // ... (بقية كود العرض JSX يبقى كما هو)
         <Container className="mt-5">
             <Row className="justify-content-md-center">
                 <Col md={8}>
