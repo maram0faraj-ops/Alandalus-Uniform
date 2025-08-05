@@ -30,7 +30,7 @@ function PrintBarcodesPage() {
     <Container className="mt-5">
       <div className="d-flex justify-content-between align-items-center mb-4 no-print">
         <h2>طباعة الباركود</h2>
-        <Button variant="success" onClick={handlePrint}>
+        <Button variant="success" onClick={handlePrint} disabled={items.length === 0}>
           <i className="fas fa-print me-2"></i> طباعة الملصقات
         </Button>
       </div>

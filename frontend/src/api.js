@@ -1,15 +1,14 @@
 import axios from 'axios';
 
-// إنشاء نسخة مخصصة من axios
+// This instance reads the correct API URL from environment variables
 const api = axios.create({
-  // هذا السطر يقرأ العنوان من متغيرات البيئة، وإذا لم يجده، يستخدم العنوان المحلي كخيار احتياطي
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// هذا الجزء يقوم بإضافة "التوكن" تلقائياً إلى أي طلب يتم إرساله
+// This interceptor automatically adds the auth token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
