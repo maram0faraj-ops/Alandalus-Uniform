@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom'; // استيراد Link
+import { Link } from 'react-router-dom';
 import api from '../api';
 
 function LoginPage() {
@@ -16,10 +16,24 @@ function LoginPage() {
     e.preventDefault();
     try {
       const response = await api.post('/api/auth/login', formData);
+      
+      // حفظ التوكن وبيانات المستخدم (بما في ذلك الدور)
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+
       alert('تم تسجيل الدخول بنجاح!');
-      // التوجيه يعتمد على دور المستخدم لاحقاً
-      window.location.href = '/admin/dashboard'; 
+      
+      // توجيه المستخدم بناءً على دوره
+      const userRole = response.data.user.role;
+      if (userRole === 'admin') {
+        window.location.href = '/admin/dashboard';
+      } else if (userRole === 'staff') {
+        window.location.href = '/staff/deliver';
+      } else {
+        // لاحقاً سنوجه ولي الأمر إلى صفحته الخاصة
+        window.location.href = '/'; 
+      }
+
     } catch (err) {
       const errorMsg = err.response?.data?.msg || 'حدث خطأ ما، يرجى المحاولة مرة أخرى';
       setError(errorMsg);
