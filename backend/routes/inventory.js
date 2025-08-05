@@ -1,5 +1,6 @@
 // --- routes/inventory.js ---
 const { v4: uuidv4 } = require('uuid');
+const express = require('express');
 const inventoryRouter = express.Router();
 inventoryRouter.post('/add', auth, async (req, res) => {
     // ... (The barcode generation logic with English codes is correct and verified)
