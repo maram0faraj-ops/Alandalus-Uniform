@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const navigate = useNavigate(); // استخدام useNavigate للتوجيه
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,23 +18,24 @@ function LoginPage() {
     try {
       const response = await api.post('/api/auth/login', formData);
       
-      // حفظ التوكن وبيانات المستخدم (بما في ذلك الدور)
+      // حفظ التوكن وبيانات المستخدم
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      alert('تم تسجيل الدخول بنجاح!');
+      // تم إزالة رسالة alert لأن التوجيه الفوري هو تأكيد كافٍ للنجاح
       
-      // ======================================================
-      // ## التعديل هنا: استخدام window.location.href للتوجيه ##
-      // ======================================================
       const userRole = response.data.user.role;
-      if (userRole === 'admin') {
-        window.location.href = '/admin/dashboard';
+
+      // ======================================================
+      // ## التعديل هنا: توجيه الأدمن وولي الأمر إلى لوحة التحكم ##
+      // ======================================================
+      if (userRole === 'admin' || userRole === 'parent') {
+        navigate('/admin/dashboard');
       } else if (userRole === 'user') {
-        window.location.href = '/staff/deliver';
+        navigate('/staff/deliver');
       } else {
-        // لاحقاً سنوجه ولي الأمر إلى صفحته الخاصة
-        window.location.href = '/'; 
+        // في حال وجود أي دور آخر غير متوقع
+        navigate('/login');
       }
 
     } catch (err) {
