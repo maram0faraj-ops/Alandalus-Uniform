@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function AdminNav() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -15,7 +16,7 @@ function AdminNav() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user'); // حذف بيانات المستخدم أيضاً
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   return (
@@ -37,7 +38,7 @@ function AdminNav() {
             )}
             
             {/* رابط يظهر للأدمن والموظف */}
-            {(user?.role === 'admin' || user?.role === 'staff') && (
+            {(user?.role === 'admin' || user?.role === 'user') && (
               <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
             )}
           </Nav>

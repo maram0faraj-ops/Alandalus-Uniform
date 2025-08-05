@@ -3,13 +3,15 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 
 // استيراد المكونات والصفحات
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage'; // التأكد من استيراد هذه الصفحة
+import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AddStockPage from './pages/AddStockPage';
 import PrintBarcodesPage from './pages/PrintBarcodesPage';
 import DeliverUniformPage from './pages/DeliverUniformPage';
-import PrivateRoute from './components/PrivateRoute';
+import AdminRoute from './components/AdminRoute'; // استيراد بوابة الأدمن الجديدة
 import AdminLayout from './components/layout/AdminLayout';
+
+// ملاحظة: لم نعد بحاجة لملف PrivateRoute.js العام
 
 function App() {
   return (
@@ -20,22 +22,25 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* صفحات الأدمن والموظفين */}
+          {/* صفحات الأدمن (محمية ببوابة الأدمن) */}
           <Route 
             path="/admin/dashboard" 
-            element={<PrivateRoute><AdminLayout><AdminDashboard /></AdminLayout></PrivateRoute>} 
+            element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} 
           />
           <Route 
             path="/admin/add-stock" 
-            element={<PrivateRoute><AdminLayout><AddStockPage /></AdminLayout></PrivateRoute>} 
+            element={<AdminRoute><AdminLayout><AddStockPage /></AdminLayout></AdminRoute>} 
           />
           <Route 
             path="/admin/print-barcodes" 
-            element={<PrivateRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></PrivateRoute>} 
+            element={<AdminRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></AdminRoute>} 
           />
+          
+          {/* صفحة الموظف (محمية ببوابة الأدمن أيضاً بشكل مؤقت) */}
+          {/* يمكن لاحقاً إنشاء بوابة StaffRoute إذا احتجنا صلاحيات مختلفة */}
           <Route 
             path="/staff/deliver"
-            element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
+            element={<AdminRoute><AdminLayout><DeliverUniformPage /></AdminLayout></AdminRoute>} 
           />
           
           {/* المسار الافتراضي */}
