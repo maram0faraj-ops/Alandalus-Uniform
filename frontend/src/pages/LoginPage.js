@@ -23,11 +23,13 @@ function LoginPage() {
 
       alert('تم تسجيل الدخول بنجاح!');
       
-      // توجيه المستخدم بناءً على دوره
+      // ======================================================
+      // ## التعديل هنا: استخدام window.location.href للتوجيه ##
+      // ======================================================
       const userRole = response.data.user.role;
       if (userRole === 'admin') {
         window.location.href = '/admin/dashboard';
-      } else if (userRole === 'staff') {
+      } else if (userRole === 'user') {
         window.location.href = '/staff/deliver';
       } else {
         // لاحقاً سنوجه ولي الأمر إلى صفحته الخاصة
