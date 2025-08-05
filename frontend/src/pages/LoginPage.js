@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import api from '../api'; // التأكد من استخدام الملف المركزي
+import { Link } from 'react-router-dom'; // استيراد Link
+import api from '../api';
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -17,7 +18,8 @@ function LoginPage() {
       const response = await api.post('/api/auth/login', formData);
       localStorage.setItem('token', response.data.token);
       alert('تم تسجيل الدخول بنجاح!');
-      window.location.href = '/admin/dashboard';
+      // التوجيه يعتمد على دور المستخدم لاحقاً
+      window.location.href = '/admin/dashboard'; 
     } catch (err) {
       const errorMsg = err.response?.data?.msg || 'حدث خطأ ما، يرجى المحاولة مرة أخرى';
       setError(errorMsg);
@@ -43,20 +45,9 @@ function LoginPage() {
               <Button variant="primary" type="submit">دخول</Button>
             </div>
           </Form>
-        </Col>
-      </Row>
-
-      {/* ====================================================== */}
-      {/* ## صندوق معلومات التشخيص ## */}
-      {/* ====================================================== */}
-      <Row className="justify-content-md-center mt-4">
-        <Col md={6}>
-          <Alert variant="info">
-            <p className="mb-0" style={{ direction: 'ltr', textAlign: 'left', wordWrap: 'break-word' }}>
-              <strong>Debugging Info:</strong><br />
-              API URL: {process.env.REACT_APP_API_URL || 'Not Set - Using http://localhost:5000'}
-            </p>
-          </Alert>
+          <p className="mt-3 text-center">
+            ليس لديك حساب؟ <Link to="/register">أنشئ حساباً جديداً</Link>
+          </p>
         </Col>
       </Row>
     </Container>
