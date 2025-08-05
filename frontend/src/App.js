@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 
 // استيراد المكونات والصفحات
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import RegisterPage from './pages/RegisterPage'; // التأكد من استيراد هذه الصفحة
 import AdminDashboard from './pages/AdminDashboard';
 import AddStockPage from './pages/AddStockPage';
 import PrintBarcodesPage from './pages/PrintBarcodesPage';
-import DeliverUniformPage from './pages/DeliverUniformPage'; // استيراد الصفحة الجديدة
+import DeliverUniformPage from './pages/DeliverUniformPage';
 import PrivateRoute from './components/PrivateRoute';
 import AdminLayout from './components/layout/AdminLayout';
 
@@ -34,7 +34,7 @@ function App() {
             element={<PrivateRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></PrivateRoute>} 
           />
           <Route 
-            path="/staff/deliver" // المسار الجديد
+            path="/staff/deliver"
             element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
           />
           
