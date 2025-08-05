@@ -10,6 +10,7 @@ import PrintBarcodesPage from './pages/PrintBarcodesPage';
 import DeliverUniformPage from './pages/DeliverUniformPage';
 import AdminRoute from './components/AdminRoute'; // استيراد بوابة الأدمن الجديدة
 import AdminLayout from './components/layout/AdminLayout';
+import PrivateRoute from './components/AdminRoute';
 
 // ملاحظة: لم نعد بحاجة لملف PrivateRoute.js العام
 
@@ -39,8 +40,10 @@ function App() {
           {/* صفحة الموظف (محمية ببوابة الأدمن أيضاً بشكل مؤقت) */}
           {/* يمكن لاحقاً إنشاء بوابة StaffRoute إذا احتجنا صلاحيات مختلفة */}
           <Route 
-            path="/staff/deliver"
-            element={<AdminRoute><AdminLayout><DeliverUniformPage /></AdminLayout></AdminRoute>} 
+            // الكود الصحيح المقترح
+
+             path="/staff/deliver"
+             element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
           />
           
           {/* المسار الافتراضي */}
