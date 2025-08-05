@@ -8,9 +8,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import AddStockPage from './pages/AddStockPage';
 import PrintBarcodesPage from './pages/PrintBarcodesPage';
 import DeliverUniformPage from './pages/DeliverUniformPage';
-import AdminRoute from './components/AdminRoute'; // استيراد بوابة الأدمن الجديدة
-import AdminLayout from './components/layout/AdminLayout';
-import PrivateRoute from './components/AdminRoute';
+import AdminRoute from './components/AdminRoute';
+import AdminLayout from './components/layout/AdminLayout'; //  يجب إعادة هذا السطر
+import PrivateRoute from './components/PrivateRoute'; // هذا هو المسار الصحيح لملف البرايفت
+
 
 // ملاحظة: لم نعد بحاجة لملف PrivateRoute.js العام
 
