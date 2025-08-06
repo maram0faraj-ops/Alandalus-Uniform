@@ -31,6 +31,11 @@ const inventoryRoutes = require('./routes/inventory');
 const dashboardRoutes = require('./routes/dashboard');
 const deliveryRoutes = require('./routes/delivery');
 
+// --- Register Models (IMPORTANT) ---
+// أضف السطر التالي هنا للتأكد من أن Mongoose يعرف هذا النموذج
+require('./models/Uniform'); // افترض أن الملف موجود في  ./models/Uniform.js
+
+
 // Mount route handlers to specific API paths
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
