@@ -1,22 +1,33 @@
 // --- routes/delivery.js ---
 const express = require('express');
 const auth = require('../middleware/auth');
-const Inventory = require('../models/Inventory'); // إصلاح: تم إضافة استيراد النموذج الناقص
-const Delivery = require('../models/Delivery');   // إضافة: لاستخدامه في مسار التوثيق
-const User = require('../models/User');         // إضافة: لاستخدامه في مسار التوثيق
+const Inventory = require('../models/Inventory');
+const Delivery = require('../models/Delivery');
+const User = require('../models/User');
 
 const deliveryRouter = express.Router();
 
 // المسار الخاص بالبحث عن الباركود
 deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
     try {
-        const item = await Inventory.findOne({ barcode: req.params.barcode, status: 'in_stock' }).populate('uniform');
+        const searchBarcode = req.params.barcode;
+        
+        // إضافة جديدة: لطباعة ما يتم البحث عنه بالضبط
+        console.log(`DATABASE_QUERY: Searching for barcode: "${searchBarcode}" with status: "in_stock"`);
+
+        const item = await Inventory.findOne({ 
+            barcode: searchBarcode, 
+            status: 'in_stock' 
+        }).populate('uniform');
+
+        // إضافة جديدة: لطباعة نتيجة البحث
+        console.log("DATABASE_RESULT:", item);
+
         if (!item) { 
             return res.status(404).json({ msg: 'الباركود غير صالح أو القطعة تم تسليمها بالفعل' }); 
         }
         res.json(item);
     } catch (err) { 
-        // إصلاح: تم وضع تسجيل الخطأ في المكان الصحيح
         console.error("ERROR IN GET /item/:barcode :", err);
         res.status(500).json({ msg: 'حدث خطأ في الخادم، يرجى مراجعة السجلات' }); 
     }
@@ -54,6 +65,6 @@ deliveryRouter.post('/record', auth, async (req, res) => {
       console.error("ERROR IN POST /record :", err); 
       res.status(500).json({ msg: 'حدث خطأ في الخادم أثناء توثيق التسليم' }); 
     }
- });
+});
 
- module.exports = deliveryRouter;
+module.exports = deliveryRouter;
