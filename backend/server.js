@@ -24,17 +24,20 @@ mongoose.connect(process.env.DATABASE_URL)
   .then(() => console.log('Successfully connected to MongoDB Atlas'))
   .catch((err) => console.error('MongoDB connection error:', err.message));
 
-// --- API Routes ---
+  // --- API Routes ---
 // Import route handlers
 const authRoutes = require('./routes/auth');
 const inventoryRoutes = require('./routes/inventory');
 const dashboardRoutes = require('./routes/dashboard');
 const deliveryRoutes = require('./routes/delivery');
 
-// --- Register Models (IMPORTANT) ---
-// أضف السطر التالي هنا للتأكد من أن Mongoose يعرف هذا النموذج
-require('./models/Uniform'); 
-require('./models/Inventory'); // من الجيد تسجيل كل النماذج هنا
+// =================================================================
+//      >>>>>  تأكد من وجود هذا الجزء وتصحيح المسارات  <<<<<
+//           الحل النهائي: تسجيل النماذج هنا
+// =================================================================
+require('./models/Uniform'); // تأكد من أن المسار صحيح لملف نموذج الزي
+require('./models/Inventory'); // من الأفضل تسجيل كل النماذج هنا
+// =================================================================
 
 // Mount route handlers to specific API paths
 app.use('/api/auth', authRoutes);
