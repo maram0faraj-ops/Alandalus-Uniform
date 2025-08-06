@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Alert, Card, Spinner } from 'react-bootstrap';
-import api from '../api';
-import BarcodeScanner from '../components/BarcodeScanner'; // تأكد من أن هذا المسار صحيح
+import api from '../api'; // يفترض وجود ملف api.js مهيأ
+import BarcodeScanner from '../components/BarcodeScanner'; // تأكد من أن هذا المسار إلى مكون الماسح صحيح
 
 function DeliverUniformPage() {
+  // --- States ---
   const [barcode, setBarcode] = useState('');
   const [item, setItem] = useState(null);
   const [studentData, setStudentData] = useState({
@@ -15,16 +16,18 @@ function DeliverUniformPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showScanner, setShowScanner] = useState(false); // حالة للتحكم في ظهور الماسح
+  const [showScanner, setShowScanner] = useState(false); // حالة التحكم بظهور الكاميرا
   const barcodeInputRef = useRef(null);
 
-  // للتركيز على حقل الإدخال عند تحميل الصفحة
+  // --- Effects ---
+  // للتركيز على حقل الإدخال عند تحميل الصفحة أو إغلاق الكاميرا
   useEffect(() => {
     if (!showScanner && barcodeInputRef.current) {
         barcodeInputRef.current.focus();
     }
   }, [showScanner]);
 
+  // --- Handlers ---
   const handleBarcodeSearch = async (e) => {
     e.preventDefault();
     if (!barcode) return;
@@ -49,8 +52,8 @@ function DeliverUniformPage() {
     setSuccess('');
     try {
       const payload = { ...studentData, barcode };
-      const response = await api.post('/api/delivery/record', payload);
-      setSuccess(response.data.msg);
+      await api.post('/api/delivery/record', payload);
+      setSuccess('تم توثيق عملية التسليم بنجاح!');
       // إعادة تعيين الحالة بعد النجاح
       setBarcode('');
       setItem(null);
@@ -62,25 +65,22 @@ function DeliverUniformPage() {
     }
   };
 
-  const handleChange = (e) => {
+  const handleStudentDataChange = (e) => {
     setStudentData({ ...studentData, [e.target.name]: e.target.value });
   };
-  
-  // دالة ليتم استدعاؤها عند نجاح المسح
+
   const handleScanSuccess = (decodedText) => {
     setBarcode(decodedText);
     setShowScanner(false);
-    // يمكنك إضافة بحث تلقائي هنا إذا أردت
-    // document.getElementById('search-button').click(); 
   };
 
-  // دالة ليتم استدعاؤها عند فشل المسح
   const handleScanError = (errorMessage) => {
-    console.error(errorMessage);
+    console.error("Barcode Scan Error:", errorMessage);
     setShowScanner(false);
     setError('فشل مسح الباركود، يرجى المحاولة مرة أخرى أو إدخاله يدوياً.');
   };
 
+  // --- Render ---
   return (
     <Container className="mt-5">
       <Row className="justify-content-md-center">
@@ -91,8 +91,9 @@ function DeliverUniformPage() {
           {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
           
           {showScanner ? (
+            // --- عرض الماسح الضوئي ---
             <div className="mb-3 text-center">
-              <div style={{ maxWidth: '400px', margin: 'auto' }}>
+              <div style={{ maxWidth: '400px', margin: 'auto', border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
                 <BarcodeScanner 
                   onScanSuccess={handleScanSuccess}
                   onScanError={handleScanError}
@@ -103,6 +104,7 @@ function DeliverUniformPage() {
               </Button>
             </div>
           ) : (
+            // --- عرض نموذج البحث ---
             <Form onSubmit={handleBarcodeSearch}>
               <Form.Group as={Row} className="mb-3 align-items-center">
                 <Form.Label column sm={3} className="text-end">مسح الباركود</Form.Label>
@@ -117,7 +119,7 @@ function DeliverUniformPage() {
                 </Col>
               </Form.Group>
               <div className="d-grid gap-2 mb-4">
-                <Button id="search-button" type="submit" disabled={loading || !barcode}>
+                <Button type="submit" disabled={loading || !barcode}>
                   {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'بحث'}
                 </Button>
                 <Button variant="secondary" onClick={() => setShowScanner(true)}>
@@ -127,6 +129,7 @@ function DeliverUniformPage() {
             </Form>
           )}
 
+          {/* --- عرض تفاصيل القطعة عند العثور عليها --- */}
           {item && (
             <Card>
               <Card.Header as="h5">تفاصيل القطعة</Card.Header>
@@ -139,13 +142,13 @@ function DeliverUniformPage() {
                 <Form onSubmit={handleRecordDelivery}>
                   <Form.Group className="mb-3">
                     <Form.Label>اسم الطالب</Form.Label>
-                    <Form.Control type="text" name="studentName" value={studentData.studentName} onChange={handleChange} required />
+                    <Form.Control type="text" name="studentName" value={studentData.studentName} onChange={handleStudentDataChange} required />
                   </Form.Group>
                   <Row>
                     <Col>
                       <Form.Group className="mb-3">
                         <Form.Label>المرحلة</Form.Label>
-                        <Form.Select name="stage" value={studentData.stage} onChange={handleChange}>
+                        <Form.Select name="stage" value={studentData.stage} onChange={handleStudentDataChange}>
                           {['رياض أطفال بنات', 'رياض أطفال بنين', 'طفولة مبكرة بنات', 'طفولة مبكرة بنين', 'ابتدائي', 'متوسط', 'ثانوي'].map(s => <option key={s} value={s}>{s}</option>)}
                         </Form.Select>
                       </Form.Group>
@@ -153,7 +156,7 @@ function DeliverUniformPage() {
                     <Col>
                       <Form.Group className="mb-3">
                         <Form.Label>الصف</Form.Label>
-                        <Form.Select name="grade" value={studentData.grade} onChange={handleChange}>
+                        <Form.Select name="grade" value={studentData.grade} onChange={handleStudentDataChange}>
                            {['أول', 'ثاني', 'ثالث', 'رابع', 'خامس', 'سادس'].map(g => <option key={g} value={g}>{g}</option>)}
                         </Form.Select>
                       </Form.Group>
@@ -161,7 +164,7 @@ function DeliverUniformPage() {
                     <Col>
                       <Form.Group className="mb-3">
                         <Form.Label>الشعبة</Form.Label>
-                        <Form.Select name="section" value={studentData.section} onChange={handleChange}>
+                        <Form.Select name="section" value={studentData.section} onChange={handleStudentDataChange}>
                           {['أ', 'ب', 'ج', 'د', 'هـ'].map(s => <option key={s} value={s}>{s}</option>)}
                         </Form.Select>
                       </Form.Group>
@@ -182,4 +185,4 @@ function DeliverUniformPage() {
   );
 }
 
- export default DeliverUniformPage;
+export default DeliverUniformPage;
