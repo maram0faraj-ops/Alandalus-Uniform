@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Alert, Card, Spinner } from 'react-bootstrap';
 import api from '../api';
+import BarcodeScanner from '../components/BarcodeScanner'; // تأكد من أن هذا المسار صحيح
 
 function DeliverUniformPage() {
   const [barcode, setBarcode] = useState('');
@@ -14,13 +15,15 @@ function DeliverUniformPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showScanner, setShowScanner] = useState(false); // حالة للتحكم في ظهور الماسح
   const barcodeInputRef = useRef(null);
 
+  // للتركيز على حقل الإدخال عند تحميل الصفحة
   useEffect(() => {
-    if (barcodeInputRef.current) {
+    if (!showScanner && barcodeInputRef.current) {
         barcodeInputRef.current.focus();
     }
-  }, []);
+  }, [showScanner]);
 
   const handleBarcodeSearch = async (e) => {
     e.preventDefault();
@@ -48,12 +51,10 @@ function DeliverUniformPage() {
       const payload = { ...studentData, barcode };
       const response = await api.post('/api/delivery/record', payload);
       setSuccess(response.data.msg);
+      // إعادة تعيين الحالة بعد النجاح
       setBarcode('');
       setItem(null);
       setStudentData({ studentName: '', stage: 'ابتدائي', grade: 'أول', section: 'أ' });
-      if (barcodeInputRef.current) {
-        barcodeInputRef.current.focus();
-      }
     } catch (err) {
       setError(err.response?.data?.msg || 'حدث خطأ أثناء توثيق التسليم');
     } finally {
@@ -64,36 +65,67 @@ function DeliverUniformPage() {
   const handleChange = (e) => {
     setStudentData({ ...studentData, [e.target.name]: e.target.value });
   };
+  
+  // دالة ليتم استدعاؤها عند نجاح المسح
+  const handleScanSuccess = (decodedText) => {
+    setBarcode(decodedText);
+    setShowScanner(false);
+    // يمكنك إضافة بحث تلقائي هنا إذا أردت
+    // document.getElementById('search-button').click(); 
+  };
+
+  // دالة ليتم استدعاؤها عند فشل المسح
+  const handleScanError = (errorMessage) => {
+    console.error(errorMessage);
+    setShowScanner(false);
+    setError('فشل مسح الباركود، يرجى المحاولة مرة أخرى أو إدخاله يدوياً.');
+  };
 
   return (
     <Container className="mt-5">
       <Row className="justify-content-md-center">
         <Col md={8}>
           <h2 className="text-center mb-4">تسليم الزي المدرسي</h2>
-          
-          <Form onSubmit={handleBarcodeSearch}>
-            <Form.Group as={Row} className="mb-3 align-items-center">
-              <Form.Label column sm={3}>مسح الباركود</Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  ref={barcodeInputRef}
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  placeholder="أدخل أو امسح الباركود هنا"
-                  autoFocus
-                />
-              </Col>
-            </Form.Group>
-            <div className="d-grid mb-4">
-              <Button type="submit" disabled={loading || !barcode}>
-                {loading ? <Spinner size="sm" /> : 'بحث'}
-              </Button>
-            </div>
-          </Form>
 
           {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
           {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
+          
+          {showScanner ? (
+            <div className="mb-3 text-center">
+              <div style={{ maxWidth: '400px', margin: 'auto' }}>
+                <BarcodeScanner 
+                  onScanSuccess={handleScanSuccess}
+                  onScanError={handleScanError}
+                />
+              </div>
+              <Button variant="danger" className="mt-2 w-100" style={{ maxWidth: '400px' }} onClick={() => setShowScanner(false)}>
+                إغلاق الكاميرا
+              </Button>
+            </div>
+          ) : (
+            <Form onSubmit={handleBarcodeSearch}>
+              <Form.Group as={Row} className="mb-3 align-items-center">
+                <Form.Label column sm={3} className="text-end">مسح الباركود</Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    type="text"
+                    ref={barcodeInputRef}
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    placeholder="أدخل أو امسح الباركود هنا"
+                  />
+                </Col>
+              </Form.Group>
+              <div className="d-grid gap-2 mb-4">
+                <Button id="search-button" type="submit" disabled={loading || !barcode}>
+                  {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'بحث'}
+                </Button>
+                <Button variant="secondary" onClick={() => setShowScanner(true)}>
+                  📸 مسح بالكاميرا
+                </Button>
+              </div>
+            </Form>
+          )}
 
           {item && (
             <Card>
@@ -137,7 +169,7 @@ function DeliverUniformPage() {
                   </Row>
                   <div className="d-grid">
                     <Button variant="success" type="submit" disabled={loading}>
-                      {loading ? <Spinner size="sm" /> : 'توثيق التسليم'}
+                      {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'توثيق التسليم'}
                     </Button>
                   </div>
                 </Form>
@@ -150,4 +182,4 @@ function DeliverUniformPage() {
   );
 }
 
-export default DeliverUniformPage;
+ export default DeliverUniformPage;
