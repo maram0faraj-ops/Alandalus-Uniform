@@ -33,8 +33,8 @@ const deliveryRoutes = require('./routes/delivery');
 
 // --- Register Models (IMPORTANT) ---
 // أضف السطر التالي هنا للتأكد من أن Mongoose يعرف هذا النموذج
-require('./models/Uniform'); // افترض أن الملف موجود في  ./models/Uniform.js
-
+require('./models/Uniform'); 
+require('./models/Inventory'); // من الجيد تسجيل كل النماذج هنا
 
 // Mount route handlers to specific API paths
 app.use('/api/auth', authRoutes);
