@@ -99,8 +99,8 @@ function DeliverUniformPage() {
             <Card>
               <Card.Header as="h5">تفاصيل القطعة</Card.Header>
               <Card.Body>
-                <p><strong>الوصف:</strong> {item.uniform.stage} - {item.uniform.type}</p>
-                <p><strong>المقاس:</strong> {item.uniform.size}</p>
+                <p><strong>الوصف:</strong> {item.uniform?.stage} - {item.uniform?.type}</p>
+                <p><strong>المقاس:</strong> {item.uniform?.size}</p>
                 <p><strong>الباركود:</strong> {item.barcode}</p>
                 <hr />
                 <h4 className="mb-3">بيانات الطالب المستلم</h4>
