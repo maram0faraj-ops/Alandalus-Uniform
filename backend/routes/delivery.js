@@ -11,14 +11,17 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
 });
 deliveryRouter.post('/record', auth, async (req, res) => {
     const { barcode, studentName, stage, grade, section } = req.body;
+    // ...
     try {
-        const item = await Inventory.findOne({ barcode, status: 'in_stock' });
-        if (!item) { return res.status(404).json({ msg: 'الباركود غير صالح أو القطعة تم تسليمها بالفعل' }); }
-        const newDelivery = new Delivery({ inventoryItem: item._id, deliveredBy: req.user.id, studentName, stage, grade, section });
-        await newDelivery.save();
-        item.status = 'delivered';
-        await item.save();
-        res.status(200).json({ msg: 'تم توثيق عملية التسليم بنجاح' });
-    } catch (err) { res.status(500).send('Server Error'); }
+      const item = await Inventory.findOne({ barcode: req.params.barcode, status: 'in_stock' }).populate('uniform');
+      // ...
+    } catch (err) {
+      // الخطوة الأهم: طباعة الخطأ الكامل في سجلات الخادم
+      console.error("ERROR WHILE SEARCHING FOR BARCODE:", err); 
+
+      // إرسال رسالة خطأ واضحة للواجهة الأمامية
+      res.status(500).json({ msg: 'حدث خطأ في الخادم، يرجى مراجعة السجلات' }); 
+    }
+// ...
 });
 module.exports = deliveryRouter;
