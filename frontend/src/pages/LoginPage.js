@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
+import logo from '../assets/images/شعار-الأهلية-مفرغ.png'; // 1. Import the logo
 
 // Professional solution for handling login and redirection
 function LoginPage() {
@@ -23,19 +24,16 @@ function LoginPage() {
     try {
       const response = await api.post('/api/auth/login', formData);
       
-      // Store user data and token in localStorage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
       const userRole = response.data.user.role;
 
-      // Navigate based on user role
       if (userRole === 'admin' || userRole === 'parent') {
         navigate('/admin/dashboard');
       } else if (userRole === 'user') {
         navigate('/staff/deliver');
       } else {
-        // Fallback for any other roles
         navigate('/'); 
       }
 
@@ -50,6 +48,11 @@ function LoginPage() {
     <Container className="mt-5">
       <Row className="justify-content-md-center">
         <Col md={6}>
+          {/* 2. Add the logo image here */}
+          <div className="text-center mb-4">
+            <img src={logo} alt="Al Andalus Schools Logo" style={{ width: '150px' }} />
+          </div>
+
           <h2 className="text-center mb-4">تسجيل الدخول للنظام</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
@@ -90,4 +93,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default LoginPage; 
