@@ -1,46 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { Navbar, Nav, Container } from 'react-bootstrap';
+import React from 'react';
+import { Navbar, Container, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-// استبدل new-logo-name.png بالاسم الجديد الفعلي الذي اخترته للشعار الثاني
+import logo from '../assets/images/logo-2.png'; // Make sure this path is correct
 
 function AdminNav() {
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  // 1. Get user data from localStorage
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userRole = user ? user.role : null;
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user'); // حذف بيانات المستخدم أيضاً
+    localStorage.removeItem('user');
     navigate('/login');
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" className="no-print">
+    <Navbar bg="dark" variant="dark" expand="lg" collapseOnSelect>
       <Container>
-        <Navbar.Brand as={Link} to={user?.role === 'admin' ? "/admin/dashboard" : "/staff/deliver"}>
-          لوحة تحكم الأندلس
+        <Navbar.Brand as={Link} to={userRole === 'admin' ? '/admin/dashboard' : '/staff/deliver'}>
+          <img
+            src={logo}
+            height="30"
+            className="d-inline-block align-top"
+            alt="Al Andalus Schools Logo"
+          />
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
+        <Navbar.Toggle aria-controls="responsive-navbar-nav" />
+        <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto">
-            {/* روابط تظهر للأدمن فقط */}
-            {user?.role === 'admin' && (
+            {/* Links visible to everyone */}
+            {userRole === 'admin' && <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>}
+            <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
+            
+            {/* 2. Conditionally render Admin-only links */}
+            {userRole === 'admin' && (
               <>
-                <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>
                 <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
                 <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
               </>
-            )}
-            
-            {/* رابط يظهر للأدمن والموظف */}
-            {(user?.role === 'admin' || user?.role === 'user') && (
-              <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
             )}
           </Nav>
           <Nav>
@@ -52,4 +51,4 @@ function AdminNav() {
   );
 }
 
-export default AdminNav;
+ export default AdminNav;
