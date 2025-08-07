@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import logo from '../assets/images/شعار-الأهلية-مفرغ.png'; // 1. Import the logo
+import logo from '../assets/images/logo1.png'; // 1. Import the logo
 
 // Professional solution for handling login and redirection
 function LoginPage() {
