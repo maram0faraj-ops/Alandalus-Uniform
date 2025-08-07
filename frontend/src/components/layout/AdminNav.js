@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo-2.png'; // Make sure this path is correct
+import logo from '../assets/images/logo1.png'; 
 
 function AdminNav() {
   const navigate = useNavigate();
