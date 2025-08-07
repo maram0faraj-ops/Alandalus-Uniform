@@ -1,8 +1,8 @@
 import React from 'react';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo2.png'; // 1. Import the new logo
-
+// استبدل new-logo-name.png بالاسم الجديد الفعلي الذي اخترته للشعار الثاني
+import logo from '../../assets/images/logo2.png';
 function AdminLayout({ children }) {
   const navigate = useNavigate();
 

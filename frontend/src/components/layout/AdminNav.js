@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+// استبدل new-logo-name.png بالاسم الجديد الفعلي الذي اخترته للشعار الثاني
 
 function AdminNav() {
   const [user, setUser] = useState(null);
