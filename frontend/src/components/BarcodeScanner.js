@@ -1,41 +1,72 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 
 const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
+  const videoRef = useRef(null);
+  const html5QrCodeRef = useRef(null);
+
   useEffect(() => {
-    const html5QrCode = new Html5Qrcode("reader"); // "reader" هو id الخاص بالعنصر
+    if (!html5QrCodeRef.current) {
+      html5QrCodeRef.current = new Html5Qrcode(videoRef.current.id);
+    }
+    const html5QrCode = html5QrCodeRef.current;
 
     const qrCodeSuccessCallback = (decodedText, decodedResult) => {
       onScanSuccess(decodedText);
-      // بعد النجاح، أوقف الكاميرا
-      html5QrCode.stop().catch(err => console.error("Failed to stop the scanner.", err));
     };
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    // إعدادات محسّنة للجوال
+    const config = {
+      fps: 10, // عدد الإطارات في الثانية
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        // تحديد حجم مربع البحث ليكون أصغر وأكثر تركيزاً
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const qrboxSize = Math.floor(minEdge * 0.7); // استخدام 70% من أصغر بعد
+        return {
+          width: qrboxSize,
+          height: qrboxSize,
+        };
+      },
+      rememberLastUsedCamera: true, // تذكر آخر كاميرا تم استخدامها
+      supportedScanTypes: [ // تحديد أنواع الباركود لزيادة سرعة البحث
+        "CODE_128",
+        "CODE_39",
+        "EAN_13",
+        "EAN_8",
+        "UPC_A",
+        "UPC_E"
+      ]
+    };
 
-    // بدء تشغيل الكاميرا
-    // نستخدم facingMode: "environment" لمحاولة فتح الكاميرا الخلفية في الجوال
-    html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback, onScanError)
-      .catch(err => {
-        console.log("Failed to start scanner, trying front camera...", err);
-        // إذا فشلت الكاميرا الخلفية، حاول تشغيل الأمامية
-        html5QrCode.start({ facingMode: "user" }, config, qrCodeSuccessCallback, onScanError)
-          .catch(err => {
-            console.error("Could not start any camera.", err);
-            onScanError("لا يمكن تشغيل الكاميرا.");
-          });
-      });
+    // طلب تشغيل الكاميرا الخلفية "environment"
+    html5QrCode.start(
+      { facingMode: { exact: "environment" } },
+      config,
+      qrCodeSuccessCallback,
+      (errorMessage) => {
+        // هذه الدالة تُستدعى لكل إطار لا يتم فيه العثور على باركود
+        // يمكننا تجاهلها لتبقى الكاميرا مفتوحة
+      }
+    ).catch((err) => {
+      console.error("Failed to start rear camera, trying any available camera", err);
+      // إذا فشلت الكاميرا الخلفية، جرب أي كاميرا متاحة
+      html5QrCode.start(
+        undefined, // السماح للمكتبة باختيار الكاميرا
+        config,
+        qrCodeSuccessCallback,
+        (errorMessage) => {}
+      ).catch(onScanError);
+    });
 
-    // دالة التنظيف لإيقاف الكاميرا عند إغلاق المكون
+    // دالة التنظيف لإيقاف الكاميرا
     return () => {
-      // التأكد من أن الماسح يعمل قبل محاولة إيقافه
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => console.error("Failed to stop the scanner on cleanup.", err));
+        html5QrCode.stop().catch(err => console.error("Failed to stop scanner on cleanup.", err));
       }
     };
   }, [onScanSuccess, onScanError]);
 
-  return <div id="reader" style={{ width: '100%', maxWidth: '500px', margin: 'auto' }}></div>;
+  return <div id="reader" ref={videoRef} style={{ width: '100%' }}></div>;
 };
 
 export default BarcodeScanner;
