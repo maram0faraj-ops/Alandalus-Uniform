@@ -72,6 +72,55 @@ useEffect(() => {
       </div>
 
       {/* ... باقي كود عرض الإحصائيات ... */}
+      {/* ================================================================== */}
+      {/* ==============   ضع هذا الكود لعرض الإحصائيات   ================== */}
+      {/* ================================================================== */}
+
+      {stats && (
+        <Row>
+          {/* Card for Total Stock */}
+          <Col md={4} className="mb-3">
+            <Card className="text-center shadow-sm h-100">
+              <Card.Body>
+                <Card.Title>إجمالي المخزون الحالي</Card.Title>
+                <Card.Text className="fs-2 fw-bold text-primary">
+                  {stats.totalStock ?? 0}
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          {/* Card for Delivered Stock */}
+          <Col md={4} className="mb-3">
+            <Card className="text-center shadow-sm h-100">
+              <Card.Body>
+                <Card.Title>الزي الذي تم تسليمه</Card.Title>
+                <Card.Text className="fs-2 fw-bold text-success">
+                  {stats.deliveredStock ?? 0}
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          {/* Card for Total Parents */}
+        
+          <Col md={4} className="mb-3">
+            <Card className="text-center shadow-sm h-100">
+              <Card.Body>
+                <Card.Title>إجمالي أولياء الأمور</Card.Title>
+                <Card.Text className="fs-2 fw-bold text-info">
+                  {stats.totalParents ?? 0}
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+      
+      
+      
+      
+      
       <Row>
         <Col md={4} className="mb-3">
           {/* ... */}
