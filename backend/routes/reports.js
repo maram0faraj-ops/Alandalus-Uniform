@@ -4,51 +4,55 @@ const Delivery = require('../models/Delivery');
 const ExcelJS = require('exceljs');
 
 router.post('/export', async (req, res) => {
-    const { stage, grade, deliveryDate, exportType } = req.body;
+    // استلام الفلتر الجديد 'section'
+    const { stage, grade, section, deliveryDate, exportType } = req.body;
 
     try {
-        // 1. بناء جملة البحث مباشرة من حقول نموذج Delivery
         const query = {};
 
         if (stage) {
-            query.stage = stage; // البحث في حقل المرحلة مباشرة
+            query.stage = stage;
         }
-        if (grade && grade.trim() !== '') {
-            query.grade = { $regex: grade.trim(), $options: 'i' }; // بحث تقريبي عن الصف
+        if (grade) {
+            query.grade = grade; // الآن البحث عن قيمة مطابقة تمامًا من القائمة
+        }
+        // إضافة فلتر الشعبة للبحث
+        if (section) {
+            query.section = section;
         }
         if (deliveryDate) {
             query.deliveryDate = { $gte: new Date(deliveryDate) };
         }
 
-        // 2. جلب البيانات المطابقة للفلاتر (بدون الحاجة لـ .populate)
         const deliveries = await Delivery.find(query);
 
-        // 3. إنشاء ملف الإكسل
         if (exportType === 'excel') {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('تقرير التسليم');
 
+            // إضافة عمود 'الشعبة' لملف الإكسل
             worksheet.columns = [
                 { header: 'اسم الطالب', key: 'studentName', width: 30 },
                 { header: 'تاريخ التسليم', key: 'deliveryDate', width: 20 },
                 { header: 'المرحلة', key: 'stage', width: 15 },
                 { header: 'الصف', key: 'grade', width: 15 },
+                { header: 'الشعبة', key: 'section', width: 10 }, // <-- العمود الجديد
             ];
 
-            // إضافة البيانات مباشرة من السجلات
             deliveries.forEach(d => {
                 worksheet.addRow({
                     studentName: d.studentName,
                     deliveryDate: d.deliveryDate ? new Date(d.deliveryDate).toLocaleDateString('ar-SA') : 'غير محدد',
                     stage: d.stage,
                     grade: d.grade,
+                    section: d.section, // <-- إضافة بيانات الشعبة لكل صف
                 });
             });
 
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', 'attachment; filename="delivery_report.xlsx"');
             await workbook.xlsx.write(res);
-             res.end();
+            res.end();
         } else {
             res.status(400).json({ message: 'نوع التصدير غير مدعوم' });
         }
