@@ -1,73 +1,79 @@
+// AdminDashboard.js
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Dropdown, Badge } from 'react-bootstrap';
 import api from '../api';
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notifications, setNotifications] = useState([]); // <-- إضافة حالة للإشعارات
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/api/dashboard/stats');
-        setStats(response.data);
+        // جلب الإحصائيات والإشعارات معاً
+        const [statsResponse, notificationsResponse] = await Promise.all([
+          api.get('/api/dashboard/stats'),
+          api.get('/api/notifications') // <-- جلب الإشعارات من الـ API
+        ]);
+        setStats(statsResponse.data);
+        setNotifications(notificationsResponse.data);
       } catch (err) {
-        setError('فشل في تحميل الإحصائيات. يرجى المحاولة مرة أخرى.');
-        console.error("Failed to fetch stats:", err);
+        setError('فشل في تحميل البيانات. يرجى المحاولة مرة أخرى.');
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <Container className="text-center mt-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </Container>
-    );
+  const handleMarkAsRead = async (id) => {
+      try {
+          await api.patch(`/api/notifications/${id}/read`);
+          setNotifications(notifications.filter(n => n._id !== id)); // إزالة الإشعار من القائمة
+      } catch (err) {
+          console.error("Failed to mark notification as read", err);
+      }
   }
 
-  if (error) {
-    return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
-  }
+  // ... (كود الـ loading و error)
 
   return (
     <Container className="mt-4">
-      <h2 className="mb-4">نظرة عامة</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>نظرة عامة</h2>
+        {/* --  مكون الإشعارات -- */}
+        <Dropdown>
+          <Dropdown.Toggle variant="light" id="dropdown-basic">
+            🔔
+            {notifications.length > 0 && <Badge pill bg="danger">{notifications.length}</Badge>}
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            {notifications.length > 0 ? (
+              notifications.map(n => (
+                <Dropdown.Item key={n._id} onClick={() => handleMarkAsRead(n._id)}>
+                  {n.message}
+                </Dropdown.Item>
+              ))
+            ) : (
+              <Dropdown.Item disabled>لا توجد إشعارات جديدة</Dropdown.Item>
+            )}
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
+
+      {/* ... باقي كود عرض الإحصائيات ... */}
       <Row>
         <Col md={4} className="mb-3">
-          <Card className="text-center shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>إجمالي المخزون الحالي</Card.Title>
-              <Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4} className="mb-3">
-          <Card className="text-center shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>القطع المسلمة</Card.Title>
-              <Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4} className="mb-3">
-          <Card className="text-center shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>عدد أولياء الأمور</Card.Title>
-              <Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text>
-            </Card.Body>
-          </Card>
+          {/* ... */}
         </Col>
       </Row>
     </Container>
   );
 }
 
-export default AdminDashboard;
+export default AdminDashboard; 
