@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
     if (user) {
       return res.status(400).json({ msg: 'هذا البريد الإلكتروني مسجل بالفعل' });
     }
-    user = new User({ name, email, password, phoneNumber, role: 'parent' });
+    user = new User({ name, email, password, phoneNumber, role: 'staff' });
     await user.save();
     res.status(201).json({ msg: 'تم تسجيل الحساب بنجاح' });
   } catch (err) {
