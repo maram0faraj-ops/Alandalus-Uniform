@@ -17,10 +17,11 @@ const PORT = process.env.PORT || 5000;
 //      >>>>>  أفضل إعدادات للـ CORS (استخدم هذا الكود)  <<<<<
 // ===================================================================
 // أضف هنا رابط Vercel الثابت والدائم الخاص بك
-const allowedOrigins = [
-  'https://your-stable-vercel-url.vercel.app', // !! هام: استبدل هذا برابطك الصحيح
-  'http://localhost:3000', // مهم للسماح بالعمل أثناء التطوير المحلي
+  const allowedOrigins = [
+  'https://alandalus-uniform-maram-faraj-alshammaris-projects.vercel.app/login', // <<< تأكد أن هذا الرابط هو الصحيح والمطابق 100%
+  'http://localhost:3000',
 ];
+ 
 
 const corsOptions = {
   origin: function (origin, callback) {
