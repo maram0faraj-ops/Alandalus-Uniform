@@ -21,8 +21,8 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'user', 'parent'], // Allowed roles
-    default: 'parent',
+    enum: ['admin', 'staff', 'parent'], // Allowed roles
+    default: 'staff',
   },
 }, { timestamps: true }); // Add createdAt and updatedAt fields automatically
 
