@@ -9,29 +9,32 @@ function AdminDashboard() {
   const [error, setError] = useState('');
   const [notifications, setNotifications] = useState([]); // <-- إضافة حالة للإشعارات
 
-  // AdminDashboard.js
+
+// AdminDashboard.js
 
 useEffect(() => {
   const fetchData = async () => {
     try {
-      // --- سنجرب جلب الإحصائيات فقط ---
+      console.log("1. Attempting to fetch stats..."); // رسالة للتأكد أن الدالة بدأت
       const statsResponse = await api.get('/api/dashboard/stats');
+
+      // --- هذا أهم سطر ---
+      console.log("2. API call successful. Received data:", statsResponse.data); 
+
       setStats(statsResponse.data);
-      // لا نطلب الإشعارات الآن
-      // const notificationsResponse = await api.get('/api/notifications');
-      // setNotifications(notificationsResponse.data);
+      console.log("3. State has been set."); // رسالة للتأكد أن هذه الخطوة تمت
 
     } catch (err) {
-      setError('فشل في تحميل البيانات.');
-      console.error("Failed to fetch data:", err);
+      // --- وهذا السطر مهم جدًا إذا حدث خطأ ---
+      console.error("4. An error was caught:", err);
+       setError('فشل في تحميل البيانات.');
     } finally {
       setLoading(false);
     }
   };
 
   fetchData();
-}, []);
-
+}, []); 
   const handleMarkAsRead = async (id) => {
       try {
           await api.patch(`/api/notifications/${id}/read`);
