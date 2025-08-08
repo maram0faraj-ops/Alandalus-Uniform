@@ -1,4 +1,4 @@
-// server.js (النسخة النهائية - مع الرابط الصحيح)
+// server.js (النسخة الكاملة والنهائية للتشخيص)
 
 // Import core packages
 const express = require('express');
@@ -13,20 +13,25 @@ const PORT = process.env.PORT || 5000;
 
 // --- Core Middleware ---
 
-// --- إعدادات CORS النهائية والصحيحة ---
+// ===================================================================
+//      >>>>>  إعدادات CORS مع كود تشخيصي لكشف المصدر  <<<<<
+// ===================================================================
 const allowedOrigins = [
-  // هذا هو الرابط الصحيح لتطبيقك على Vercel الذي كشفته السجلات
-  'https://alandalus-uniform-cwkubn1dc-maram-faraj-alshammaris-projects.vercel.app',
-  // هذا الرابط للعمل على جهازك المحلي
+  // سنترك هذا الرابط المؤقت فقط لتشغيل الكود التشخيصي
+  'https://placeholder-for-debugging.com', 
   'http://localhost:3000',
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // هذا السطر سيطبع في سجلات Render مصدر الطلب الحقيقي في كل مرة
+    console.log(`>> CORS Check: Request received from origin: ${origin}`); 
+
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('هذا النطاق غير مسموح به بواسطة سياسة CORS'));
+      // هذه الرسالة ستظهر في سجلات Render وتحتوي على الرابط الصحيح
+      callback(new Error(`سياسة CORS لا تسمح بالوصول من المصدر: ${origin}`));
     }
   },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -34,6 +39,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+// ===================================================================
+
 app.use(express.json());
 
 // --- Database Connection ---
@@ -41,7 +48,7 @@ mongoose.connect(process.env.DATABASE_URL)
   .then(() => console.log('Successfully connected to MongoDB Atlas'))
   .catch((err) => console.error('MongoDB connection error:', err.message));
 
-// --- تسجيل نماذج Mongoose ---
+// --- Mongoose Models Registration ---
 require('./models/Inventory');
 const Notification = require('./models/Notification');
 const Inventory = mongoose.model('Inventory');
@@ -61,7 +68,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 
-// --- المهمة المجدولة ---
+// --- Scheduled Job ---
 cron.schedule('0 8 * * *', async () => {
   console.log('CRON: Running a daily low stock check...');
   const lowStockThreshold = 20;
