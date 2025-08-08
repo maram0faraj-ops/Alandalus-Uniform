@@ -1,14 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo1.png'; 
+import logo from '../assets/images/logo2.png'; // Make sure this path is correct
 
 function AdminNav() {
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState(null);
 
-  // 1. Get user data from localStorage
-  const user = JSON.parse(localStorage.getItem('user'));
-  const userRole = user ? user.role : null;
+  // Use useEffect to safely read from localStorage after the component mounts
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setUserRole(user.role);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data from localStorage", error);
+      // Handle cases with invalid data, maybe log out
+      handleLogout();
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -34,7 +46,7 @@ function AdminNav() {
             {userRole === 'admin' && <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>}
             <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
             
-            {/* 2. Conditionally render Admin-only links */}
+            {/* Conditionally render Admin-only links */}
             {userRole === 'admin' && (
               <>
                 <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
@@ -51,4 +63,4 @@ function AdminNav() {
   );
 }
 
- export default AdminNav;
+export default AdminNav;
