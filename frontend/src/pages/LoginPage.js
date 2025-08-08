@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import logo from '../assets/images/logo1.png'; // 1. Import the logo
+import logo from '../assets/images/logo1.png';
 
-// Professional solution for handling login and redirection
 function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -29,11 +28,16 @@ function LoginPage() {
       
       const userRole = response.data.user.role;
 
-      if (userRole === 'admin' || userRole === 'parent') {
+      // Conditional redirection based on the user's role
+      if (userRole === 'admin') {
         navigate('/admin/dashboard');
-      } else if (userRole === 'user') {
+      } else if (userRole === 'staff') { // ✅ **Correction Made Here**
         navigate('/staff/deliver');
+      } else if (userRole === 'parent') {
+        // Example: Redirect parents to a specific dashboard
+        navigate('/admin/dashboard'); // Or a future parent dashboard
       } else {
+        // Fallback for any other roles
         navigate('/'); 
       }
 
@@ -48,7 +52,6 @@ function LoginPage() {
     <Container className="mt-5">
       <Row className="justify-content-md-center">
         <Col md={6}>
-          {/* 2. Add the logo image here */}
           <div className="text-center mb-4">
             <img src={logo} alt="Al Andalus Schools Logo" style={{ width: '150px' }} />
           </div>
@@ -93,4 +96,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage; 
+export default LoginPage;
