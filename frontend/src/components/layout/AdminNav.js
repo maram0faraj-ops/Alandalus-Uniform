@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo2.png'; // Make sure this path is correct
+import logo from '../assets/images/logo2.png'; // تأكد من صحة هذا المسار
 
 function AdminNav() {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState(null);
 
-  // Use useEffect to safely read from localStorage after the component mounts
+  // استخدم useEffect للقراءة بأمان من localStorage بعد تحميل المكون
   useEffect(() => {
     try {
       const userData = localStorage.getItem('user');
@@ -17,7 +17,7 @@ function AdminNav() {
       }
     } catch (error) {
       console.error("Failed to parse user data from localStorage", error);
-      // Handle cases with invalid data, maybe log out
+      // التعامل مع البيانات غير الصالحة، ربما بتسجيل الخروج
       handleLogout();
     }
   }, []);
@@ -31,6 +31,7 @@ function AdminNav() {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" collapseOnSelect>
       <Container>
+        {/* توجيه المستخدم إلى صفحته الرئيسية بناءً على دوره */}
         <Navbar.Brand as={Link} to={userRole === 'admin' ? '/admin/dashboard' : '/staff/deliver'}>
           <img
             src={logo}
@@ -42,11 +43,17 @@ function AdminNav() {
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto">
-            {/* Links visible to everyone */}
-            {userRole === 'admin' && <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>}
+            {/* === الجزء الأهم: العرض الشرطي للروابط === */}
+
+            {/* روابط تظهر للمسؤول فقط */}
+            {userRole === 'admin' && (
+              <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>
+            )}
+
+            {/* رابط يظهر للجميع (المسؤول والموظف) */}
             <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
             
-            {/* Conditionally render Admin-only links */}
+            {/* روابط تظهر للمسؤول فقط */}
             {userRole === 'admin' && (
               <>
                 <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
