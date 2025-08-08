@@ -1,3 +1,4 @@
+// App.js (النسخة الكاملة والصحيحة)
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
@@ -8,26 +9,23 @@ import AdminDashboard from './pages/AdminDashboard';
 import AddStockPage from './pages/AddStockPage';
 import PrintBarcodesPage from './pages/PrintBarcodesPage';
 import DeliverUniformPage from './pages/DeliverUniformPage';
+import AdminLayout from './components/layout/AdminLayout';
+import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
-import AdminLayout from './components/layout/AdminLayout'; //  يجب إعادة هذا السطر
-import PrivateRoute from './components/PrivateRoute'; // هذا هو المسار الصحيح لملف البرايفت
-// App.js
 import Reports from './pages/Reports'; // استيراد المكون الجديد
-
-
-
-// ملاحظة: لم نعد بحاجة لملف PrivateRoute.js العام
 
 function App() {
   return (
     <Router>
       <div className="App">
+        {/* كل المسارات يجب أن تكون داخل هذا الغلاف */}
         <Routes>
+
           {/* المسارات العامة */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* صفحات الأدمن (محمية ببوابة الأدمن) */}
+          {/* صفحات الأدمن (محمية) */}
           <Route 
             path="/admin/dashboard" 
             element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} 
@@ -40,26 +38,24 @@ function App() {
             path="/admin/print-barcodes" 
             element={<AdminRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></AdminRoute>} 
           />
-          
-          {/* صفحة الموظف (محمية ببوابة الأدمن أيضاً بشكل مؤقت) */}
-          {/* يمكن لاحقاً إنشاء بوابة StaffRoute إذا احتجنا صلاحيات مختلفة */}
           <Route 
-            // الكود الصحيح المقترح
-
+            path="/admin/reports" // <<< تم نقل هذا السطر إلى المكان الصحيح
+            element={<AdminRoute><AdminLayout><Reports /></AdminLayout></AdminRoute>} 
+          />
+          
+          {/* صفحات الموظفين (محمية) */}
+          <Route 
              path="/staff/deliver"
              element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
           />
           
-          {/* المسار الافتراضي */}
-          <Route path="*" element={<Navigate to="/login" />} />
+          {/* المسار الافتراضي (يجب أن يكون آخر مسار داخل Routes) */}
+          <Route path="*" element={<Navigate to="/login" />} />  {/* <<< تم نقل هذا السطر إلى المكان الصحيح */}
 
         </Routes>
-        
-           <Route path="/admin/reports" 
-            element={<PrivateRoute><AdminLayout><Reports /></AdminLayout></PrivateRoute>} /> 
-      </div>
+       </div>
     </Router>
   );
 }
 
-export default App;
+ export default App;
