@@ -11,30 +11,37 @@ function AdminDashboard() {
 
 
 // AdminDashboard.js
+// AdminDashboard.js
 
 useEffect(() => {
-  const fetchData = async () => {
+  setLoading(true);
+  const fetchDashboardData = async () => {
     try {
-      console.log("1. Attempting to fetch stats..."); // رسالة للتأكد أن الدالة بدأت
-      const statsResponse = await api.get('/api/dashboard/stats');
+      // استدعاء كلا الطلبين في نفس الوقت
+      const [statsResponse, notificationsResponse] = await Promise.all([
+        api.get('/api/dashboard/stats'),
+        api.get('/api/notifications')
+      ]);
 
-      // --- هذا أهم سطر ---
-      console.log("2. API call successful. Received data:", statsResponse.data); 
+      // عرض النتائج في الـ console للتأكد
+      console.log("Stats data received:", statsResponse.data);
+      console.log("Notifications data received:", notificationsResponse.data);
 
+      // تحديث الـ state بالبيانات المستلمة
       setStats(statsResponse.data);
-      console.log("3. State has been set."); // رسالة للتأكد أن هذه الخطوة تمت
+      setNotifications(notificationsResponse.data);
 
     } catch (err) {
-      // --- وهذا السطر مهم جدًا إذا حدث خطأ ---
-      console.error("4. An error was caught:", err);
-       setError('فشل في تحميل البيانات.');
+      console.error("Failed to fetch dashboard data:", err);
+      setError('فشل في تحميل بعض بيانات لوحة التحكم.');
     } finally {
       setLoading(false);
     }
   };
 
-  fetchData();
-}, []); 
+  fetchDashboardData();
+}, []);
+
   const handleMarkAsRead = async (id) => {
       try {
           await api.patch(`/api/notifications/${id}/read`);

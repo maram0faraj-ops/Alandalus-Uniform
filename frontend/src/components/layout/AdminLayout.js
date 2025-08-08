@@ -34,6 +34,7 @@ function AdminLayout({ children }) {
               <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
               <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
               <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
+              <Nav.Link as={Link} to="/admin/reports">التقارير</Nav.Link>
             </Nav>
             <Nav>
               <Nav.Link onClick={handleLogout}>تسجيل الخروج</Nav.Link>
