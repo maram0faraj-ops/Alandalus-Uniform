@@ -7,41 +7,36 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- Main Barcode Card Styling --- */
 .barcode-card {
   width: -moz-fit-content;
   width: fit-content;
   margin-left: auto;
   margin-right: auto;
-  background-color: transparent !important; /* Make card background transparent */
+  background-color: transparent !important;
 }
 
 .school-name {
   font-weight: bold;
   font-size: 0.9rem;
   color: #333;
-  margin-bottom: 0.5rem;
 }
 
 .item-details {
   font-size: 0.8rem;
   color: #555;
-  margin-top: 0.5rem;
 }
-/* --- Final Print-Specific Styles --- */
+
+/* --- Final and Complete Print Styles --- */
 @media print {
-  /* This rule controls the printed page itself */
   @page {
-    size: A4; /* Defines the paper size */
-    margin: 1.5cm; /* Sets the margin around the page */
+    size: A4;
+    margin: 1cm;
   }
 
-  /* Hide elements with the 'no-print' class */
   .no-print, .no-print * {
     display: none !important;
   }
-  
-  /* Make the printable area fill the page */
+
   .printable {
     position: absolute;
     left: 0;
@@ -50,29 +45,39 @@ body {
     height: 100%;
   }
 
-  /* Table styling for print */
+  .printable .container, .printable .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
   .printable table {
     width: 100%;
     height: 100%;
-    border-collapse: collapse; /* Removes gaps between cells */
-    table-layout: fixed;     /* Ensures columns are of equal width */
+    table-layout: fixed;
+    border-collapse: collapse;
   }
 
   .printable td {
-    border: 1px dashed #888 !important; /* Defines the cutting lines */
-    padding: 5mm !important;          /* Adds space inside each label */
+    border: 1px dashed #999 !important;
+    padding: 2mm !important;
     text-align: center;
     vertical-align: middle;
   }
-  
-  /* Reset card styles for clean printing */
+
+  /* --- CRITICAL FIX: This makes the barcode responsive --- */
+  .barcode-container svg {
+    width: 100% !important;
+    height: 50px !important; /* Set a fixed height for consistency */
+  }
+
   .barcode-card {
     border: none !important;
-    box-shadow: none !important;
-    background-color: transparent !important;
+     box-shadow: none !important;
   }
   
   .school-name, .item-details {
     color: #000 !important;
+    margin: 0.5rem 0;
   }
 }
