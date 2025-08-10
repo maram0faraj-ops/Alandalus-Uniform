@@ -53,27 +53,30 @@ function AdminDashboard() {
 
         // --- معالجة بيانات مخطط حالة الدفع (النسخة المصححة) ---
         const stageData = stageStatsRes.data;
-        const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean); // فلترة القيم الفارغة
+        // استخلاص جميع المراحل الفريدة من البيانات
+        const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean);
 
-        setStageChartData({
-          labels: stageLabels,
-          datasets: [
-            {
-              label: 'مدفوع',
-              data: stageLabels.map(label =>
-                stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'paid')?.count || 0
-              ),
-              backgroundColor: '#4bc0c0',
-            },
-            {
-              label: 'مجاني',
-              data: stageLabels.map(label =>
-                stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'free')?.count || 0
-              ),
-              backgroundColor: '#ff6384',
-            },
-          ],
-        });
+        if (stageLabels.length > 0) {
+            setStageChartData({
+              labels: stageLabels,
+              datasets: [
+                {
+                  label: 'مدفوع',
+                  data: stageLabels.map(label =>
+                    stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'paid')?.count || 0
+                  ),
+                  backgroundColor: '#4bc0c0', // لون تركواز
+                },
+                {
+                  label: 'مجاني',
+                  data: stageLabels.map(label =>
+                    stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'free')?.count || 0
+                  ),
+                  backgroundColor: '#ff6384', // لون وردي
+                },
+              ],
+            });
+        }
 
         // --- معالجة بيانات مخطط حالة المخزون ---
         const statusLabels = statusStatsRes.data.map(item => {
@@ -111,9 +114,9 @@ function AdminDashboard() {
     <Container fluid className="p-4">
       {/* Cards */}
       <Row>
-        <Col md={4}><Card className="text-center shadow-sm"><Card.Body><Card.Title>إجمالي المخزون الحالي</Card.Title><Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text></Card.Body></Card></Col>
-        <Col md={4}><Card className="text-center shadow-sm"><Card.Body><Card.Title>الزي الذي تم تسليمه</Card.Title><Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text></Card.Body></Card></Col>
-        <Col md={4}><Card className="text-center shadow-sm"><Card.Body><Card.Title>إجمالي أولياء الأمور</Card.Title><Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text></Card.Body></Card></Col>
+        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>إجمالي المخزون الحالي</Card.Title><Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text></Card.Body></Card></Col>
+        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>الزي الذي تم تسليمه</Card.Title><Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text></Card.Body></Card></Col>
+        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>إجمالي أولياء الأمور</Card.Title><Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text></Card.Body></Card></Col>
       </Row>
 
       {/* Charts */}
@@ -123,7 +126,7 @@ function AdminDashboard() {
             <Card.Body>
               <Card.Title>الزي المدفوع والمجاني لكل مرحلة</Card.Title>
               <div style={{ position: 'relative', height: '300px' }}>
-                {stageChartData && <Bar data={stageChartData} options={{ responsive: true, maintainAspectRatio: false }} />}
+                {stageChartData ? <Bar data={stageChartData} options={{ responsive: true, maintainAspectRatio: false }} /> : <p className="text-center mt-5">لا توجد بيانات لعرضها</p>}
               </div>
             </Card.Body>
           </Card>
