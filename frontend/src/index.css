@@ -9,25 +9,11 @@ body {
 
 /* --- Main Barcode Card Styling --- */
 .barcode-card {
-  /* This is the key rule to fix the width */
   width: -moz-fit-content;
   width: fit-content;
-  
-  /* These rules center the card in its column */
   margin-left: auto;
   margin-right: auto;
-  
-  /* Your existing styles for appearance */
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  background-color: #f0f8ff; /* A light, pleasant aliceblue color */
-  transition: box-shadow 0.3s ease-in-out;
-  height: 100%;
-}
-
-.barcode-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: transparent !important; /* Make card background transparent */
 }
 
 .school-name {
@@ -56,22 +42,27 @@ body {
     left: 0;
     top: 0;
     width: 100%;
-    padding: 1cm;
+    padding: 0.5cm; /* Adjust padding as needed */
+  }
+  
+  /* Table styling for print */
+  .printable table {
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are of equal width */
   }
 
-  /* Ensure individual cards are not split across pages */
-  .barcode-card-container {
-     page-break-inside: avoid;
+  .printable td {
+    border: 1px dashed #999 !important;
+    padding: 5mm 0 !important; /* Add padding inside cells */
   }
 
   /* Reset card styles for clean printing */
   .barcode-card {
-    border: 1px dashed #777 !important;
-    box-shadow: none !important;
-    background-color: white !important;
+    border: none !important;
+     box-shadow: none !important;
   }
   
   .school-name, .item-details {
     color: #000 !important;
   }
-}
+} 

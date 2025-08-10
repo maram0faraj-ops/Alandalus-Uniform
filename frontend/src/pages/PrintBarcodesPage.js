@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Spinner, Alert, Card } from 'react-bootstrap';
+import { Container, Button, Spinner, Alert, Card, Table } from 'react-bootstrap';
 import api from '../api';
 import BarcodeRenderer from '../components/BarcodeRenderer';
 
@@ -11,7 +11,6 @@ function PrintBarcodesPage() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        // We only need to print items that are in stock
         const response = await api.get('/api/inventory?status=in_stock');
         setItems(response.data);
       } catch (err) {
@@ -23,56 +22,77 @@ function PrintBarcodesPage() {
     };
     fetchItems();
   }, []);
-  
+
   const handlePrint = () => {
     window.print();
   };
 
+  // --- New Logic: Group items into rows of 4 ---
+  const itemsPerRow = 4;
+  const groupedItems = items.reduce((resultArray, item, index) => { 
+    const chunkIndex = Math.floor(index / itemsPerRow);
+
+    if(!resultArray[chunkIndex]) {
+      resultArray[chunkIndex] = []; // Start a new row
+    }
+
+    resultArray[chunkIndex].push(item);
+    return resultArray;
+  }, []);
+
   return (
     <Container className="mt-5">
-      {/* This entire section will NOT be printed */}
+      {/* This section will NOT be printed */}
       <div className="d-flex justify-content-between align-items-center mb-4 no-print">
         <h2>طباعة الباركود</h2>
         <Button variant="success" onClick={handlePrint} disabled={items.length === 0}>
-          <i className="fas fa-print me-2"></i> طباعة الملصقات
+          طباعة الملصقات
         </Button>
       </div>
 
-      {loading && (
-        <div className="text-center">
-          <Spinner animation="border" />
-        </div>
-      )}
-
+      {loading && <div className="text-center"><Spinner animation="border" /></div>}
       {error && <Alert variant="danger" className="no-print">{error}</Alert>}
 
-      {/* This Row is the only part that WILL be printed */}
+      {/* --- This Table is the only part that WILL be printed --- */}
       {!loading && !error && (
-        <Row className="printable">
-          {items.length > 0 ? items.map((item) => (
-            // Check if item and item.uniform exist to prevent errors
-            item && item.uniform && (
-              <Col key={item._id} lg={3} md={4} sm={6} xs={12} className="mb-4 barcode-card-container">
-                <Card className="barcode-card">
-                  <Card.Body className="d-flex flex-column justify-content-center align-items-center p-2">
-                    <p className="fw-bold school-name mb-2">مدارس الأندلس الأهلية</p>
-                    <BarcodeRenderer value={item.barcode} />
-                    <p className="item-details mt-2">
-                      {item.uniform.stage} - {item.uniform.type} (مقاس: {item.uniform.size})
-                    </p>
-                  </Card.Body>
-                </Card>
-              </Col>
-            )
-          )) : (
-            <Col>
-              <Alert variant="info" className="no-print">لا يوجد قطع في المخزون لعرضها.</Alert>
-            </Col>
-          )}
-        </Row>
+        <div className="printable">
+          <Table bordered>
+            <tbody>
+              {groupedItems.length > 0 ? groupedItems.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((item) => (
+                    <td key={item._id} className="align-middle text-center">
+                      {item.uniform ? (
+                        <Card className="barcode-card border-0">
+                          <Card.Body className="d-flex flex-column justify-content-center align-items-center p-2">
+                            <p className="fw-bold school-name mb-2">مدارس الأندلس الأهلية</p>
+                            <BarcodeRenderer value={item.barcode} />
+                            <p className="item-details mt-2">
+                              {item.uniform.stage} - {item.uniform.type} (مقاس: {item.uniform.size})
+                            </p>
+                          </Card.Body>
+                        </Card>
+                      ) : null}
+                    </td>
+                  ))}
+                  {/* Add empty cells if the row is not full */}
+                  {Array(itemsPerRow - row.length).fill(0).map((_, emptyIndex) => (
+                    <td key={`empty-${emptyIndex}`}></td>
+                  ))}
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={itemsPerRow}>
+                    <Alert variant="info" className="no-print m-0">لا يوجد قطع في المخزون لعرضها.</Alert>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </div>
       )}
     </Container>
   );
 }
 
- export default PrintBarcodesPage;
+export default PrintBarcodesPage;
