@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Button, Spinner, Alert, Card, Table } from 'react-bootstrap';
+import { Container, Button, Spinner, Alert, Table } from 'react-bootstrap';
 import api from '../api';
 import BarcodeRenderer from '../components/BarcodeRenderer';
 
@@ -27,20 +27,20 @@ function PrintBarcodesPage() {
     window.print();
   };
 
+  // Logic to group items into rows of 4 for the table
   const itemsPerRow = 4;
-  const groupedItems = items.reduce((resultArray, item, index) => {
+  const groupedItems = items.reduce((resultArray, item, index) => { 
     const chunkIndex = Math.floor(index / itemsPerRow);
-
     if (!resultArray[chunkIndex]) {
       resultArray[chunkIndex] = [];
     }
-
     resultArray[chunkIndex].push(item);
     return resultArray;
   }, []);
 
   return (
-    <Container className="mt-5">
+    <Container className="mt-5 barcode-print-page"> {/* Added a parent class for specific styling */}
+      {/* Non-printable section */}
       <div className="d-flex justify-content-between align-items-center mb-4 no-print">
         <h2>طباعة الباركود</h2>
         <Button variant="success" onClick={handlePrint} disabled={items.length === 0}>
@@ -51,41 +51,34 @@ function PrintBarcodesPage() {
       {loading && <div className="text-center"><Spinner animation="border" /></div>}
       {error && <Alert variant="danger" className="no-print">{error}</Alert>}
 
+      {/* Printable section with a structured table */}
       {!loading && !error && (
         <div className="printable">
-          <Table>
+          <Table className="barcode-table">
             <tbody>
-              {groupedItems.length > 0 ? groupedItems.map((row, rowIndex) => (
+              {groupedItems.map((row, rowIndex) => (
                 <tr key={rowIndex}>
                   {row.map((item) => (
-                    <td key={item._id} className="align-middle text-center">
+                    <td key={item._id}>
                       {item.uniform ? (
-                        <Card className="barcode-card border-0">
-                          <Card.Body className="d-flex flex-column justify-content-center align-items-center p-1">
-                            <p className="fw-bold school-name mb-1">مدارس الأندلس الأهلية</p>
-                            {/* ▼▼▼ This wrapper is the only change needed in this file ▼▼▼ */}
-                            <div className="barcode-container">
-                              <BarcodeRenderer value={item.barcode} />
-                            </div>
-                            <p className="item-details mt-1">
-                              {item.uniform.stage} - {item.uniform.type} (مقاس: {item.uniform.size})
-                            </p>
-                          </Card.Body>
-                        </Card>
+                        <div className="barcode-card">
+                          <p className="school-name">مدارس الأندلس الأهلية</p>
+                          <div className="barcode-container">
+                            <BarcodeRenderer value={item.barcode} />
+                          </div>
+                          <p className="item-details">
+                            {item.uniform.stage} - {item.uniform.type} (مقاس: {item.uniform.size})
+                          </p>
+                        </div>
                       ) : null}
                     </td>
                   ))}
+                  {/* Fill remaining cells in the last row to maintain structure */}
                   {Array(itemsPerRow - row.length).fill(0).map((_, emptyIndex) => (
-                    <td key={`empty-${emptyIndex}`}></td>
+                    <td key={`empty-${emptyIndex}`} className="empty-cell"></td>
                   ))}
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan={itemsPerRow}>
-                    <Alert variant="info" className="no-print m-0">لا يوجد قطع في المخزون لعرضها.</Alert>
-                  </td>
-                </tr>
-              )}
+              ))}
             </tbody>
           </Table>
         </div>
