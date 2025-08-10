@@ -27,19 +27,22 @@ function PrintBarcodesPage() {
     window.print();
   };
 
-  // Logic to group items into rows of 4 for the table
-  const itemsPerRow = 4;
+  // --- Only Change Needed is Here ---
+  const itemsPerRow = 2; // <-- Change this value from 4 to 2
+
   const groupedItems = items.reduce((resultArray, item, index) => { 
     const chunkIndex = Math.floor(index / itemsPerRow);
-    if (!resultArray[chunkIndex]) {
-      resultArray[chunkIndex] = [];
+
+    if(!resultArray[chunkIndex]) {
+      resultArray[chunkIndex] = []; // Start a new row
     }
+
     resultArray[chunkIndex].push(item);
     return resultArray;
   }, []);
 
   return (
-    <Container className="mt-5 barcode-print-page"> {/* Added a parent class for specific styling */}
+    <Container className="mt-5 barcode-print-page">
       {/* Non-printable section */}
       <div className="d-flex justify-content-between align-items-center mb-4 no-print">
         <h2>طباعة الباركود</h2>
@@ -51,7 +54,7 @@ function PrintBarcodesPage() {
       {loading && <div className="text-center"><Spinner animation="border" /></div>}
       {error && <Alert variant="danger" className="no-print">{error}</Alert>}
 
-      {/* Printable section with a structured table */}
+      {/* Printable section */}
       {!loading && !error && (
         <div className="printable">
           <Table className="barcode-table">
@@ -73,7 +76,7 @@ function PrintBarcodesPage() {
                       ) : null}
                     </td>
                   ))}
-                  {/* Fill remaining cells in the last row to maintain structure */}
+                  {/* Fill remaining cells to maintain structure */}
                   {Array(itemsPerRow - row.length).fill(0).map((_, emptyIndex) => (
                     <td key={`empty-${emptyIndex}`} className="empty-cell"></td>
                   ))}
