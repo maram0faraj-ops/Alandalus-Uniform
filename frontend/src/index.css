@@ -10,9 +10,9 @@ body {
 /* --- Styles for the Barcode Page Table Layout --- */
 .barcode-print-page .barcode-table {
   width: 100%;
-  table-layout: fixed; /* Ensures columns are equal width */
-  border-collapse: separate;
-  border-spacing: 15px; /* Adds space between cards */
+  table-layout: fixed;
+  border-collapse: separate; /* This creates the space between cards on-screen */
+  border-spacing: 15px;
 }
 
 .barcode-print-page .barcode-table td {
@@ -24,7 +24,6 @@ body {
   background-color: #f8f9fa;
 }
 
-/* Hide border for empty cells */
 .barcode-print-page .barcode-table .empty-cell {
   border: none;
   background-color: transparent;
@@ -56,10 +55,9 @@ body {
   }
 
   body {
-    background-color: white !important; /* Ensure background is not printed */
+    background-color: white !important;
   }
 
-  /* Hide any element with the 'no-print' class */
   .no-print, .no-print * {
     display: none !important;
   }
@@ -72,13 +70,15 @@ body {
     height: 100%;
   }
 
+  /* ▼▼▼ CSS Rules for Print Table Spacing ▼▼▼ */
   .printable .barcode-table {
-    border-spacing: 0;
+    border-collapse: separate !important; /* Keep cells separate */
+    border-spacing: 5mm !important;      /* Define the space between cells */
   }
 
   .printable td {
     border: 1px dashed #777 !important;
-    padding: 5mm !important;
+    padding: 2mm !important; /* Padding inside the cell */
     background-color: transparent !important;
   }
   
