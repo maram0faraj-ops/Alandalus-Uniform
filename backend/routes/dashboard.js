@@ -5,7 +5,6 @@ const router = express.Router();
 const Inventory = require('../models/Inventory');
 const Delivery = require('../models/Delivery');
 const User = require('../models/User');
-const Uniform = require('../models/Uniform'); // قد نحتاجه لجلب تفاصيل الزي
 
 // --- واجهة برمجة التطبيقات الرئيسية للإحصائيات ---
 router.get('/stats', async (req, res) => {
@@ -39,16 +38,36 @@ router.get('/low-stock-alerts', async (req, res) => {
 });
 
 
-// --- واجهة برمجة التطبيقات لمخطط حالة الدفع (النسخة المصححة) ---
+// --- واجهة برمجة التطبيقات لمخطط حالة الدفع (النسخة النهائية المصححة) ---
 router.get('/stage-payment-stats', async (req, res) => {
   try {
     const stats = await Delivery.aggregate([
+      // الخطوة 1: الربط مع جدول المخزون
+      {
+        $lookup: {
+          from: 'inventories', // اسم جدول المخزون (تأكد من أنه صحيح)
+          localField: 'inventoryItem',
+          foreignField: '_id',
+          as: 'inventoryDetails'
+        }
+      },
+      { $unwind: '$inventoryDetails' },
+      // الخطوة 2: الربط مع جدول الزي
+      {
+        $lookup: {
+          from: 'uniforms', // اسم جدول الزي (تأكد من أنه صحيح)
+          localField: 'inventoryDetails.uniform',
+          foreignField: '_id',
+          as: 'uniformDetails'
+        }
+      },
+      { $unwind: '$uniformDetails' },
+      // الخطوة 3: التجميع النهائي
       {
         $group: {
-          // تأكد من أن الحقول "stage" و "paymentStatus" موجودة في نموذج Delivery
           _id: {
-            stage: "$stage",
-            paymentStatus: "$paymentStatus"
+            stage: "$stage", // من جدول التسليم
+            paymentType: "$uniformDetails.paymentType" // من جدول الزي
           },
           count: { $sum: 1 }
         }
@@ -56,7 +75,7 @@ router.get('/stage-payment-stats', async (req, res) => {
     ]);
     res.json(stats);
   } catch (err) {
-    console.error(err.message);
+    console.error("Error fetching stage payment stats:", err);
     res.status(500).send('Server Error');
   }
 });
