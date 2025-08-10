@@ -35,9 +35,12 @@ body {
 /* --- FINAL AND COMPLETE PRINT STYLES --- */
 @media print {
   @page {
-    size: A4;
+    /* Change the page orientation here */
+    size: A4 landscape; /* <-- This is the only change needed in this file */
     margin: 1cm;
   }
+
+  /* ... The rest of your print styles remain the same ... */
 
   body {
     background-color: white !important;
@@ -54,19 +57,16 @@ body {
     width: 100%;
   }
 
-  /* Force Bootstrap columns to be treated as flex items for printing */
   .printable .row {
     display: flex;
     flex-wrap: wrap;
   }
 
-  /* This is the container for each card, it creates the margin */
   .printable .barcode-wrapper {
-    padding: 5mm !important; /* This creates the space between labels */
-    height: 6cm; /* Give each label a fixed height */
+    padding: 5mm !important;
+    height: 8cm; /* Adjusted height for landscape */
   }
 
-  /* This is the card itself, with the dashed border */
   .printable .barcode-card {
     border: 1px dashed #777 !important;
     padding: 2mm !important;
@@ -74,10 +74,9 @@ body {
     border-radius: 0 !important;
   }
   
-  /* Make the barcode responsive */
   .barcode-container svg {
     width: 100% !important;
-    height: 45px !important;
+    height: 50px !important;
   }
   
   .school-name, .item-details {

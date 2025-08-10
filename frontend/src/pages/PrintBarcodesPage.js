@@ -26,7 +26,7 @@ function PrintBarcodesPage() {
   const handlePrint = () => {
     window.print();
   };
- 
+
   return (
     <Container className="mt-5">
       {/* Non-printable section */}
@@ -45,8 +45,8 @@ function PrintBarcodesPage() {
         <div className="printable">
           <Row>
             {items.length > 0 ? items.map((item) => (
-              // xs={6} creates a 2-column layout (12 / 6 = 2)
-              <Col xs={6} key={item._id} className="barcode-wrapper">
+              // Changed back to 4 columns for landscape (12 / 3 = 4)
+              <Col xs={3} key={item._id} className="barcode-wrapper">
                 {item.uniform ? (
                   <div className="barcode-card">
                     <p className="school-name">مدارس الأندلس الأهلية</p>
