@@ -79,10 +79,10 @@ function AdminDashboard() {
 
         // 4. Process and set data for the Doughnut Chart
         setStatusChartData({
-          labels: statusStatsRes.data.map(item => item._id === 'in_stock' ? 'في المخزون' : 'تم التسليم'),
+          labels: statusStatsRes.data.map(item => item._id === 'in_stock' ? 'في المخزون' : (item._id === 'delivered' ? 'تم التسليم' : 'مطلوب')),
           datasets: [{
             data: statusStatsRes.data.map(item => item.count),
-            backgroundColor: ['#36a2eb', '#ffce56'],
+            backgroundColor: ['#36a2eb', '#ffce56', '#ff6384'],
           },],
         });
 
@@ -169,7 +169,7 @@ function AdminDashboard() {
               {lowStockAlerts.length > 0 ? (
                 lowStockAlerts.map(item => (
                   <ListGroup.Item key={item._id}>
-                    <strong>{item.quantity}</strong> قطعة متبقية من: {item.name} (المرحلة: {item.stage}, المقاس: {item.size})
+                    <strong>{item.quantity}</strong> قطعة متبقية من: {item.uniformDetails.name} (المرحلة: {item.uniformDetails.stage}, المقاس: {item.uniformDetails.size})
                   </ListGroup.Item>
                 ))
               ) : (
