@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
+
+// تأكد من صحة مسارات النماذج
 const Inventory = require('../models/Inventory');
 const Delivery = require('../models/Delivery');
 const User = require('../models/User');
+const Uniform = require('../models/Uniform'); // قد نحتاجه لجلب تفاصيل الزي
 
-// API to get main statistics for the top cards
+// --- واجهة برمجة التطبيقات الرئيسية للإحصائيات ---
 router.get('/stats', async (req, res) => {
   try {
     const totalStock = await Inventory.countDocuments({ status: 'in_stock' });
@@ -17,49 +20,36 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// API for Low Stock Notifications (Corrected Logic)
+// --- واجهة برمجة التطبيقات لتنبيهات المخزون المنخفض ---
 router.get('/low-stock-alerts', async (req, res) => {
-  try {
-    const alerts = await Inventory.aggregate([
-      // 1. Find only items that are currently in stock
-      { $match: { status: 'in_stock' } },
-      // 2. Group by uniform type and count the quantity
-      {
-        $group: {
-          _id: "$uniform",
-          quantity: { $sum: 1 }
-        }
-      },
-      // 3. Filter for groups with a low quantity
-      { $match: { quantity: { $lte: 50 } } },
-      // 4. Get the full details for each uniform type
-      {
-        $lookup: {
-          from: 'uniforms', // The name of your 'Uniform' collection
-          localField: '_id',
-          foreignField: '_id',
-          as: 'uniformDetails'
-        }
-      },
-      // 5. Deconstruct the uniformDetails array
-      { $unwind: "$uniformDetails" },
-      // 6. Sort by the lowest quantity first
-      { $sort: { quantity: 1 } }
-    ]);
-    res.json(alerts);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
+    try {
+        const alerts = await Inventory.aggregate([
+            { $match: { status: 'in_stock' } },
+            { $group: { _id: "$uniform", quantity: { $sum: 1 } } },
+            { $match: { quantity: { $lte: 50 } } },
+            { $lookup: { from: 'uniforms', localField: '_id', foreignField: '_id', as: 'uniformDetails' } },
+            { $unwind: "$uniformDetails" },
+            { $sort: { quantity: 1 } }
+        ]);
+        res.json(alerts);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
 });
 
-// API for Paid vs. Free Uniforms Chart
+
+// --- واجهة برمجة التطبيقات لمخطط حالة الدفع (النسخة المصححة) ---
 router.get('/stage-payment-stats', async (req, res) => {
   try {
     const stats = await Delivery.aggregate([
       {
         $group: {
-          _id: { stage: "$stage", status: "$paymentStatus" },
+          // تأكد من أن الحقول "stage" و "paymentStatus" موجودة في نموذج Delivery
+          _id: {
+            stage: "$stage",
+            paymentStatus: "$paymentStatus"
+          },
           count: { $sum: 1 }
         }
       }
@@ -71,16 +61,11 @@ router.get('/stage-payment-stats', async (req, res) => {
   }
 });
 
-// API for Delivery Status Donut Chart
+// --- واجهة برمجة التطبيقات لمخطط حالة المخزون ---
 router.get('/delivery-status-stats', async (req, res) => {
   try {
     const stats = await Inventory.aggregate([
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 }
-        }
-      }
+      { $group: { _id: "$status", count: { $sum: 1 } } }
     ]);
     res.json(stats);
   } catch (err) {

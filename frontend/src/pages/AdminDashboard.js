@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import api from '../api';
 
-// Register the components Chart.js needs
+// تسجيل المكونات اللازمة للرسوم البيانية
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -25,7 +25,6 @@ ChartJS.register(
 );
 
 function AdminDashboard() {
-  // State for all dashboard data
   const [stats, setStats] = useState(null);
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [stageChartData, setStageChartData] = useState(null);
@@ -37,7 +36,6 @@ function AdminDashboard() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Fetch all data in parallel for speed
         const [
           statsRes,
           alertsRes,
@@ -50,40 +48,45 @@ function AdminDashboard() {
           api.get('/api/dashboard/delivery-status-stats'),
         ]);
 
-        // 1. Set main stats
         setStats(statsRes.data);
-
-        // 2. Set low stock alerts
         setLowStockAlerts(alertsRes.data);
 
-        // 3. Process and set data for the Bar Chart
-        const stageLabels = [...new Set(stageStatsRes.data.map(item => item._id.stage))];
+        // --- معالجة بيانات مخطط حالة الدفع (النسخة المصححة) ---
+        const stageData = stageStatsRes.data;
+        const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean); // فلترة القيم الفارغة
+
         setStageChartData({
           labels: stageLabels,
-          datasets: [{
-            label: 'مدفوع',
-            data: stageLabels.map(label =>
-              stageStatsRes.data.find(item => item._id.stage === label && item._id.status === 'paid')?.count || 0
-            ),
-            backgroundColor: '#4bc0c0',
-          },
-          {
-            label: 'مجاني',
-            data: stageLabels.map(label =>
-              stageStatsRes.data.find(item => item._id.stage === label && item._id.status === 'free')?.count || 0
-            ),
-            backgroundColor: '#ff6384',
-          },
+          datasets: [
+            {
+              label: 'مدفوع',
+              data: stageLabels.map(label =>
+                stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'paid')?.count || 0
+              ),
+              backgroundColor: '#4bc0c0',
+            },
+            {
+              label: 'مجاني',
+              data: stageLabels.map(label =>
+                stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'free')?.count || 0
+              ),
+              backgroundColor: '#ff6384',
+            },
           ],
         });
 
-        // 4. Process and set data for the Doughnut Chart
+        // --- معالجة بيانات مخطط حالة المخزون ---
+        const statusLabels = statusStatsRes.data.map(item => {
+            if (item._id === 'in_stock') return 'في المخزون';
+            if (item._id === 'delivered') return 'تم التسليم';
+            return item._id;
+        });
         setStatusChartData({
-          labels: statusStatsRes.data.map(item => item._id === 'in_stock' ? 'في المخزون' : (item._id === 'delivered' ? 'تم التسليم' : 'مطلوب')),
+          labels: statusLabels,
           datasets: [{
             data: statusStatsRes.data.map(item => item.count),
             backgroundColor: ['#36a2eb', '#ffce56', '#ff6384'],
-          },],
+          }],
         });
 
       } catch (err) {
@@ -106,35 +109,14 @@ function AdminDashboard() {
 
   return (
     <Container fluid className="p-4">
-      {/* --- Top Stats Cards --- */}
+      {/* Cards */}
       <Row>
-        <Col md={4} className="mb-3">
-          <Card className="text-center shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>إجمالي المخزون الحالي</Card.Title>
-              <Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4} className="mb-3">
-          <Card className="text-center shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>الزي الذي تم تسليمه</Card.Title>
-              <Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4} className="mb-3">
-          <Card className="text-center shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>إجمالي أولياء الأمور</Card.Title>
-              <Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
+        <Col md={4}><Card className="text-center shadow-sm"><Card.Body><Card.Title>إجمالي المخزون الحالي</Card.Title><Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text></Card.Body></Card></Col>
+        <Col md={4}><Card className="text-center shadow-sm"><Card.Body><Card.Title>الزي الذي تم تسليمه</Card.Title><Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text></Card.Body></Card></Col>
+        <Col md={4}><Card className="text-center shadow-sm"><Card.Body><Card.Title>إجمالي أولياء الأمور</Card.Title><Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text></Card.Body></Card></Col>
       </Row>
 
-      {/* --- Charts Row --- */}
+      {/* Charts */}
       <Row className="mt-4">
         <Col lg={7} className="mb-4">
           <Card className="shadow-sm h-100">
@@ -158,7 +140,7 @@ function AdminDashboard() {
         </Col>
       </Row>
 
-      {/* --- Low Stock Alerts --- */}
+      {/* Low Stock Alerts */}
       <Row className="mt-4">
         <Col>
           <Card className="shadow-sm">
@@ -168,7 +150,7 @@ function AdminDashboard() {
             <ListGroup variant="flush">
               {lowStockAlerts.length > 0 ? (
                 lowStockAlerts.map(item => (
-                  <ListGroup.Item key={item._id}>
+                  <ListGroup.Item key={item.uniformDetails._id}>
                     <strong>{item.quantity}</strong> قطعة متبقية من: {item.uniformDetails.name} (المرحلة: {item.uniformDetails.stage}, المقاس: {item.uniformDetails.size})
                   </ListGroup.Item>
                 ))
