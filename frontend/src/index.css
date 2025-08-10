@@ -3,51 +3,36 @@ body {
   text-align: right;
   font-family: 'Tajawal', sans-serif;
   margin: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- Styles for the Barcode Page Table Layout --- */
-.barcode-print-page .barcode-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: separate; /* This creates the space between cards on-screen */
-  border-spacing: 15px;
-}
-
-.barcode-print-page .barcode-table td {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  text-align: center;
-  vertical-align: middle;
-  background-color: #f8f9fa;
-}
-
-.barcode-print-page .barcode-table .empty-cell {
-  border: none;
-  background-color: transparent;
+/* --- On-Screen Styles for the new Grid --- */
+.barcode-wrapper {
+  padding: 10px; /* Adds space between cards on the screen */
 }
 
 .barcode-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
+  justify-content: center;
+  align-items: center;
 }
 
 .school-name {
   font-weight: bold;
   font-size: 0.9rem;
-  color: #333;
 }
 
 .item-details {
   font-size: 0.8rem;
-  color: #555;
 }
 
-/* --- Final and Complete Print Styles --- */
+
+/* --- FINAL AND COMPLETE PRINT STYLES --- */
 @media print {
   @page {
     size: A4;
@@ -57,31 +42,39 @@ body {
   body {
     background-color: white !important;
   }
-
-  .no-print, .no-print * {
+  
+  .no-print {
     display: none !important;
   }
-  
+
   .printable {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%;
   }
 
-  /* ▼▼▼ CSS Rules for Print Table Spacing ▼▼▼ */
-  .printable .barcode-table {
-    border-collapse: separate !important; /* Keep cells separate */
-    border-spacing: 5mm !important;      /* Define the space between cells */
+  /* Force Bootstrap columns to be treated as flex items for printing */
+  .printable .row {
+    display: flex;
+    flex-wrap: wrap;
   }
 
-  .printable td {
+  /* This is the container for each card, it creates the margin */
+  .printable .barcode-wrapper {
+    padding: 5mm !important; /* This creates the space between labels */
+    height: 6cm; /* Give each label a fixed height */
+  }
+
+  /* This is the card itself, with the dashed border */
+  .printable .barcode-card {
     border: 1px dashed #777 !important;
-    padding: 2mm !important; /* Padding inside the cell */
-    background-color: transparent !important;
+    padding: 2mm !important;
+    background: none !important;
+    border-radius: 0 !important;
   }
   
+  /* Make the barcode responsive */
   .barcode-container svg {
     width: 100% !important;
     height: 45px !important;
