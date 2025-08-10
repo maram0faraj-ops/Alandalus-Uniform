@@ -28,41 +28,51 @@ body {
   color: #555;
   margin-top: 0.5rem;
 }
-
-/* --- Print-Specific Styles --- */
+/* --- Final Print-Specific Styles --- */
 @media print {
-  /* Hide elements with the 'no-print' class */
-  .no-print {
-    display: none !important;
+  /* This rule controls the printed page itself */
+  @page {
+    size: A4; /* Defines the paper size */
+    margin: 1.5cm; /* Sets the margin around the page */
   }
 
+  /* Hide elements with the 'no-print' class */
+  .no-print, .no-print * {
+    display: none !important;
+  }
+  
   /* Make the printable area fill the page */
   .printable {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    padding: 0.5cm; /* Adjust padding as needed */
+    height: 100%;
   }
-  
+
   /* Table styling for print */
   .printable table {
     width: 100%;
-    table-layout: fixed; /* Ensures columns are of equal width */
+    height: 100%;
+    border-collapse: collapse; /* Removes gaps between cells */
+    table-layout: fixed;     /* Ensures columns are of equal width */
   }
 
   .printable td {
-    border: 1px dashed #999 !important;
-    padding: 5mm 0 !important; /* Add padding inside cells */
+    border: 1px dashed #888 !important; /* Defines the cutting lines */
+    padding: 5mm !important;          /* Adds space inside each label */
+    text-align: center;
+    vertical-align: middle;
   }
-
+  
   /* Reset card styles for clean printing */
   .barcode-card {
     border: none !important;
-     box-shadow: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
   }
   
   .school-name, .item-details {
     color: #000 !important;
   }
-} 
+}
