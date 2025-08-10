@@ -5,7 +5,7 @@ body {
   margin: 0;
 }
 
-/* --- On-Screen Styles for the new Grid --- */
+/* --- On-Screen Styles for the Grid --- */
 .barcode-wrapper {
   padding: 10px; /* Adds space between cards on the screen */
 }
@@ -35,12 +35,9 @@ body {
 /* --- FINAL AND COMPLETE PRINT STYLES --- */
 @media print {
   @page {
-    /* Change the page orientation here */
-    size: A4 landscape; /* <-- This is the only change needed in this file */
+    size: A4 landscape; /* Set orientation to landscape */
     margin: 1cm;
   }
-
-  /* ... The rest of your print styles remain the same ... */
 
   body {
     background-color: white !important;
@@ -62,11 +59,13 @@ body {
     flex-wrap: wrap;
   }
 
+  /* This is the container for each card, it creates the margin */
   .printable .barcode-wrapper {
-    padding: 5mm !important;
-    height: 8cm; /* Adjusted height for landscape */
+    padding: 5mm !important; /* This creates the space between labels */
+    height: 8cm; /* Give each label a fixed height for landscape */
   }
 
+  /* This is the card itself, with the dashed border */
   .printable .barcode-card {
     border: 1px dashed #777 !important;
     padding: 2mm !important;
@@ -74,6 +73,7 @@ body {
     border-radius: 0 !important;
   }
   
+  /* Make the barcode responsive */
   .barcode-container svg {
     width: 100% !important;
     height: 50px !important;
