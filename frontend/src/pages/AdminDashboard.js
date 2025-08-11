@@ -53,6 +53,9 @@ function AdminDashboard() {
 
         // --- معالجة بيانات مخطط حالة الدفع (النسخة المصححة) ---
         const stageData = stageStatsRes.data;
+        // السطر التالي هو للتحقق من البيانات فقط، سيتم طباعة النتيجة في لوحة تحكم المتصفح
+        console.log("البيانات المستلمة من الخادم لمخطط المراحل:", stageData);
+
         // استخلاص جميع المراحل الفريدة من البيانات
         const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean);
 
@@ -168,4 +171,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard; 
+export default AdminDashboard;
