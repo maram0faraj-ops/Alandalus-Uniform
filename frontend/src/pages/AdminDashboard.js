@@ -1,170 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Spinner, Alert, ListGroup } from 'react-bootstrap';
-import { Bar, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
-import api from '../api';
+const express = require('express');
+const router = express.Router();
 
-// تسجيل المكونات اللازمة للرسوم البيانية
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+// تأكد من صحة مسارات النماذج
+const Inventory = require('../models/Inventory');
+const Delivery = require('../models/Delivery');
+const User = require('../models/User');
 
-function AdminDashboard() {
-  const [stats, setStats] = useState(null);
-  const [lowStockAlerts, setLowStockAlerts] = useState([]);
-  const [stageChartData, setStageChartData] = useState(null);
-  const [statusChartData, setStatusChartData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+// --- واجهة برمجة التطبيقات الرئيسية للإحصائيات ---
+router.get('/stats', async (req, res) => {
+  try {
+    const totalStock = await Inventory.countDocuments({ status: 'in_stock' });
+    const deliveredStock = await Delivery.countDocuments();
+    const totalParents = await User.countDocuments({ role: 'parent' });
+    res.json({ totalStock, deliveredStock, totalParents });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        const [
-          statsRes,
-          alertsRes,
-          stageStatsRes,
-          statusStatsRes
-        ] = await Promise.all([
-          api.get('/api/dashboard/stats'),
-          api.get('/api/dashboard/low-stock-alerts'),
-          api.get('/api/dashboard/stage-payment-stats'),
-          api.get('/api/dashboard/delivery-status-stats'),
+// --- واجهة برمجة التطبيقات لتنبيهات المخزون المنخفض ---
+router.get('/low-stock-alerts', async (req, res) => {
+    try {
+        const alerts = await Inventory.aggregate([
+            { $match: { status: 'in_stock' } },
+            { $group: { _id: "$uniform", quantity: { $sum: 1 } } },
+            { $match: { quantity: { $lte: 50 } } },
+            { $lookup: { from: 'uniforms', localField: '_id', foreignField: '_id', as: 'uniformDetails' } },
+            { $unwind: "$uniformDetails" },
+            { $sort: { quantity: 1 } }
         ]);
+        res.json(alerts);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-        setStats(statsRes.data);
-        setLowStockAlerts(alertsRes.data);
 
-        // --- معالجة بيانات مخطط حالة الدفع ---
-        const stageData = stageStatsRes.data;
-        const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean);
-
-        if (stageLabels.length > 0) {
-            setStageChartData({
-              labels: stageLabels,
-              datasets: [
-                {
-                  label: 'مدفوع',
-                  data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'paid')?.count || 0
-                  ),
-                  backgroundColor: '#4bc0c0',
-                },
-                {
-                  label: 'مجاني',
-                  data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'free')?.count || 0
-                  ),
-                  backgroundColor: '#ff6384',
-                },
-              ],
-            });
+// --- واجهة برمجة التطبيقات لمخطط حالة الدفع (النسخة النهائية المصححة) ---
+router.get('/stage-payment-stats', async (req, res) => {
+  try {
+    const stats = await Delivery.aggregate([
+      // الخطوة 1: الربط مع جدول المخزون
+      {
+        $lookup: {
+          from: 'inventories',
+          localField: 'inventoryItem',
+          foreignField: '_id',
+          as: 'inventoryDetails'
         }
-
-        // --- معالجة بيانات مخطط حالة المخزون ---
-        const statusLabels = statusStatsRes.data.map(item => {
-            if (item._id === 'in_stock') return 'في المخزون';
-            if (item._id === 'delivered') return 'تم التسليم';
-            return item._id;
-        });
-        setStatusChartData({
-          labels: statusLabels,
-          datasets: [{
-            data: statusStatsRes.data.map(item => item.count),
-            backgroundColor: ['#36a2eb', '#ffce56', '#ff6384'],
-          }],
-        });
-
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
-        setError('فشل في تحميل بيانات لوحة التحكم.');
-      } finally {
-        setLoading(false);
+      },
+      { $unwind: '$inventoryDetails' },
+      // الخطوة 2: الربط مع جدول الزي
+      {
+        $lookup: {
+          from: 'uniforms',
+          localField: 'inventoryDetails.uniform',
+          foreignField: '_id',
+          as: 'uniformDetails'
+        }
+      },
+      { $unwind: '$uniformDetails' },
+      // الخطوة 3: التجميع النهائي
+      {
+        $group: {
+          _id: {
+            stage: "$uniformDetails.stage",
+            paymentType: "$uniformDetails.paymentType"
+          },
+          count: { $sum: 1 }
+        }
       }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
-    return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
+    ]);
+    res.json(stats);
+  } catch (err) {
+    console.error("Error fetching stage payment stats:", err);
+    res.status(500).send('Server Error');
   }
-  if (error) {
-    return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
+});
+
+// --- واجهة برمجة التطبيقات لمخطط حالة المخزون ---
+router.get('/delivery-status-stats', async (req, res) => {
+  try {
+    const stats = await Inventory.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    res.json(stats);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
+});
 
-  return (
-    <Container fluid className="p-4">
-      {/* Cards */}
-      <Row>
-        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>إجمالي المخزون الحالي</Card.Title><Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text></Card.Body></Card></Col>
-        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>الزي الذي تم تسليمه</Card.Title><Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text></Card.Body></Card></Col>
-        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>إجمالي أولياء الأمور</Card.Title><Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text></Card.Body></Card></Col>
-      </Row>
-
-      {/* Charts */}
-      <Row className="mt-4">
-        <Col lg={7} className="mb-4">
-          <Card className="shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>الزي المدفوع والمجاني لكل مرحلة</Card.Title>
-              <div style={{ position: 'relative', height: '300px' }}>
-                {stageChartData ? <Bar data={stageChartData} options={{ responsive: true, maintainAspectRatio: false }} /> : <p className="text-center mt-5">لا توجد بيانات لعرضها</p>}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={5} className="mb-4">
-          <Card className="shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>حالة المخزون الإجمالية</Card.Title>
-              <div style={{ position: 'relative', height: '300px' }}>
-                {statusChartData && <Doughnut data={statusChartData} options={{ responsive: true, maintainAspectRatio: false }} />}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Low Stock Alerts */}
-      <Row className="mt-4">
-        <Col>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-warning text-dark">
-              <h5>تنبيهات المخزون المنخفض (50 قطعة أو أقل) ⚠️</h5>
-            </Card.Header>
-            <ListGroup variant="flush">
-              {lowStockAlerts.length > 0 ? (
-                lowStockAlerts.map(item => (
-                  <ListGroup.Item key={item.uniformDetails._id}>
-                    <strong>{item.quantity}</strong> قطعة متبقية من: {item.uniformDetails.name} (المرحلة: {item.uniformDetails.stage}, المقاس: {item.uniformDetails.size})
-                  </ListGroup.Item>
-                ))
-              ) : (
-                <ListGroup.Item>لا توجد تنبيهات حاليًا، المخزون بحالة جيدة!</ListGroup.Item>
-              )}
-            </ListGroup>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
-  );
-}
-
-export default AdminDashboard;
+module.exports = router;
