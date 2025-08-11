@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import api from '../api';
 
-// تسجيل المكونات اللازمة للرسوم البيانية
+// Register the necessary components for the charts
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -51,7 +51,7 @@ function AdminDashboard() {
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- معالجة بيانات مخطط حالة الدفع ---
+        // --- Process Stage Payment Chart Data ---
         const stageData = stageStatsRes.data;
         const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean);
 
@@ -62,14 +62,16 @@ function AdminDashboard() {
                 {
                   label: 'مدفوع',
                   data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'paid')?.count || 0
+                    // ✅ FINAL FIX: Using the correct Arabic word 'مدفوع'
+                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'مدفوع')?.count || 0
                   ),
                   backgroundColor: '#4bc0c0',
                 },
                 {
                   label: 'مجاني',
                   data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'free')?.count || 0
+                    // ✅ FINAL FIX: Using the correct Arabic word 'مجاني'
+                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'مجاني')?.count || 0
                   ),
                   backgroundColor: '#ff6384',
                 },
@@ -77,7 +79,7 @@ function AdminDashboard() {
             });
         }
 
-        // --- معالجة بيانات مخطط حالة المخزون ---
+        // --- Process Inventory Status Chart Data ---
         const statusLabels = statusStatsRes.data.map(item => {
             if (item._id === 'in_stock') return 'في المخزون';
             if (item._id === 'delivered') return 'تم التسليم';
