@@ -63,14 +63,14 @@ function AdminDashboard() {
                 {
                   label: 'مدفوع',
                   data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'paid')?.count || 0
+                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'paid')?.count || 0
                   ),
                   backgroundColor: '#4bc0c0', // لون تركواز
                 },
                 {
                   label: 'مجاني',
                   data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentStatus === 'free')?.count || 0
+                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'free')?.count || 0
                   ),
                   backgroundColor: '#ff6384', // لون وردي
                 },
@@ -168,4 +168,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard;
+export default AdminDashboard; 
