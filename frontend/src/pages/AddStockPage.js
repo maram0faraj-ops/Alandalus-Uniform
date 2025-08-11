@@ -22,7 +22,13 @@ function AddStockPage() {
     const handleChange = (e) => {
         setMessage('');
         setError('');
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        // ✅ **THIS IS THE FIX**
+        // Convert the quantity value to a number before setting the state.
+        const finalValue = name === 'quantity' ? parseInt(value, 10) : value;
+
+        setFormData({ ...formData, [name]: finalValue });
     };
 
   const handleSubmit = async (e) => {
@@ -98,4 +104,4 @@ function AddStockPage() {
   );
 }
 
-export default AddStockPage;
+ export default AddStockPage;
