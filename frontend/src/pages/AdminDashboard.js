@@ -62,7 +62,6 @@ function AdminDashboard() {
                 {
                   label: 'مدفوع',
                   data: stageLabels.map(label =>
-                    // ✅ FINAL FIX: Using the correct Arabic word 'مدفوع'
                     stageData.find(item => item._id.stage === label && item._id.paymentType === 'مدفوع')?.count || 0
                   ),
                   backgroundColor: '#4bc0c0',
@@ -70,7 +69,6 @@ function AdminDashboard() {
                 {
                   label: 'مجاني',
                   data: stageLabels.map(label =>
-                    // ✅ FINAL FIX: Using the correct Arabic word 'مجاني'
                     stageData.find(item => item._id.stage === label && item._id.paymentType === 'مجاني')?.count || 0
                   ),
                   backgroundColor: '#ff6384',
@@ -155,7 +153,7 @@ function AdminDashboard() {
               {lowStockAlerts.length > 0 ? (
                 lowStockAlerts.map(item => (
                   <ListGroup.Item key={item.uniformDetails._id}>
-                    <strong>{item.quantity}</strong> قطعة متبقية من: {item.uniformDetails.name} (المرحلة: {item.uniformDetails.stage}, المقاس: {item.uniformDetails.size})
+                    <strong>{item.quantity}</strong> قطعة متبقية من: {item.uniformDetails.stage} - {item.uniformDetails.type} (مقاس: {item.uniformDetails.size}, {item.uniformDetails.paymentType})
                   </ListGroup.Item>
                 ))
               ) : (
