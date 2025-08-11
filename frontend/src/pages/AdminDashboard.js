@@ -51,12 +51,8 @@ function AdminDashboard() {
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- معالجة بيانات مخطط حالة الدفع (النسخة المصححة) ---
+        // --- معالجة بيانات مخطط حالة الدفع ---
         const stageData = stageStatsRes.data;
-        // السطر التالي هو للتحقق من البيانات فقط، سيتم طباعة النتيجة في لوحة تحكم المتصفح
-        console.log("البيانات المستلمة من الخادم لمخطط المراحل:", stageData);
-
-        // استخلاص جميع المراحل الفريدة من البيانات
         const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean);
 
         if (stageLabels.length > 0) {
@@ -68,14 +64,14 @@ function AdminDashboard() {
                   data: stageLabels.map(label =>
                     stageData.find(item => item._id.stage === label && item._id.paymentType === 'paid')?.count || 0
                   ),
-                  backgroundColor: '#4bc0c0', // لون تركواز
+                  backgroundColor: '#4bc0c0',
                 },
                 {
                   label: 'مجاني',
                   data: stageLabels.map(label =>
                     stageData.find(item => item._id.stage === label && item._id.paymentType === 'free')?.count || 0
                   ),
-                  backgroundColor: '#ff6384', // لون وردي
+                  backgroundColor: '#ff6384',
                 },
               ],
             });
