@@ -84,3 +84,8 @@ body {
     margin: 0.25rem 0;
   }
 }
+@media print {
+  @page {
+    size: portrait;
+  }
+}
