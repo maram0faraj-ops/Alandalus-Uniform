@@ -136,6 +136,8 @@ function DeliverUniformPage() {
               <Card.Body>
                 <p><strong>الوصف:</strong> {item.uniform?.stage} - {item.uniform?.type}</p>
                 <p><strong>المقاس:</strong> {item.uniform?.size}</p>
+                {/* === السطر الجديد الذي تمت إضافته === */}
+                <p><strong>نوع الدفع:</strong> <span className={item.uniform?.paymentType === 'مجاني' ? 'text-success fw-bold' : 'text-primary fw-bold'}>{item.uniform?.paymentType}</span></p>
                 <p><strong>الباركود:</strong> {item.barcode}</p>
                 <hr />
                 <h4 className="mb-3">بيانات الطالب المستلم</h4>
