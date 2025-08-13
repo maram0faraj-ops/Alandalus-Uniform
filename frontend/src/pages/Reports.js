@@ -53,8 +53,7 @@ function Reports() {
                 <Form.Control as="select" name="stage" onChange={handleInputChange}>
                   <option value="">الكل</option>
                   <option value="رياض أطفال">رياض أطفال</option>
-                  <option value="طفولة مبكرة">طفولة مبكرة</option>
-                  <option value="ابتدائي">ابتدائي</option>
+                   <option value="ابتدائي">ابتدائي</option>
                   <option value="متوسط">متوسط</option>
                   <option value="ثانوي">ثانوي</option>
                 </Form.Control>

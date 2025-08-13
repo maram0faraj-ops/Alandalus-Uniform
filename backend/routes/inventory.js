@@ -1,12 +1,8 @@
-// --- /backend/routes/inventory.js ---
-
-const { v4: uuidv4 } = require('uuid');
+ const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const auth = require('../middleware/auth');
 const inventoryRouter = express.Router();
-
-// Assuming Uniform and Inventory models are imported somewhere before or in the file that uses this router.
-// For clarity in this file, let's define them conceptually.
+ 
 const Uniform = require('../models/Uniform');
 const Inventory = require('../models/Inventory');
 
@@ -25,15 +21,18 @@ inventoryRouter.post('/add', auth, async (req, res) => {
     }
 
     try {
-        // Find if the uniform type already exists, if not, create it
+        // Find if the uniform type already exists
         let uniform = await Uniform.findOne({ stage, type, size });
+
+        // If the uniform type does not exist, create it
         if (!uniform) {
+            // No reference to paymentType here, as requested
             uniform = new Uniform({ stage, type, size });
             await uniform.save();
         }
 
         // Define codes for barcode generation
-        const stageCodes = {'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', 'طفولة مبكرة بنات': 'ECG', 'طفولة مبكرة بنين': 'ECB', 'ابتدائي': 'PRI', 'متوسط': 'INT', 'ثانوي': 'SEC'};
+        const stageCodes = {'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', ' ابتدائي بنات': 'ECG', ' ابتدائي بنين': 'ECB', 'متوسط': 'INT', 'ثانوي': 'SEC'};
         const typeCodes = {'رسمي': 'O', 'رياضي': 'S', 'جاكيت': 'J'};
 
         const stageCode = stageCodes[stage] || 'UNK';
