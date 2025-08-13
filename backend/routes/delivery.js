@@ -4,15 +4,15 @@ const auth = require('../middleware/auth');
 const Inventory = require('../models/Inventory');
 const Delivery = require('../models/Delivery');
 const User = require('../models/User');
+const Uniform = require('../models/Uniform'); // <-- خطوة مهمة: استيراد نموذج الزي
 
 const deliveryRouter = express.Router();
 
-// المسار الخاص بالبحث عن الباركود
+// المسار الخاص بالبحث عن الباركود (لا تغيير هنا)
 deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
     try {
         const searchBarcode = req.params.barcode;
         
-        // لطباعة ما يتم البحث عنه
         console.log(`DATABASE_QUERY: Searching for barcode: "${searchBarcode}" with status: "in_stock"`);
 
         const item = await Inventory.findOne({ 
@@ -20,7 +20,6 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
             status: 'in_stock' 
         }).populate('uniform');
 
-        // لطباعة نتيجة البحث
         console.log("DATABASE_RESULT:", item);
 
         if (!item) { 
@@ -35,20 +34,30 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
 
 // المسار الخاص بتوثيق عملية التسليم
 deliveryRouter.post('/record', auth, async (req, res) => {
-    // تم إضافة paymentType إلى المتغيرات المستلمة
+    // استقبال نوع الدفع من الواجهة الأمامية
     const { barcode, studentName, stage, grade, section, paymentType } = req.body;
     
     try {
-      // Find the inventory item by barcode
+      // البحث عن قطعة المخزون
       const inventoryItem = await Inventory.findOne({ barcode: barcode, status: 'in_stock' });
       if (!inventoryItem) {
         return res.status(404).json({ msg: 'هذا الباركود غير صالح أو تم تسليمه مسبقاً' });
       }
 
-      // Create a new delivery record
+      // --- الجزء الجديد: تحديث نوع الدفع ---
+      // نقوم بتحديث نوع الدفع في مستند الزي الأصلي بناءً على اختيارك
+      if (paymentType) {
+        await Uniform.updateOne(
+            { _id: inventoryItem.uniform },
+            { $set: { paymentType: paymentType } }
+        );
+      }
+      // --- نهاية الجزء الجديد ---
+
+      // إنشاء سجل تسليم جديد
       const newDelivery = new Delivery({
         inventoryItem: inventoryItem._id,
-        deliveredBy: req.user.id, // Comes from the 'auth' middleware
+        deliveredBy: req.user.id,
         studentName,
         stage,
         grade,
@@ -56,11 +65,11 @@ deliveryRouter.post('/record', auth, async (req, res) => {
       });
       await newDelivery.save();
 
-      // Update the inventory item's status to 'delivered'
+      // تحديث حالة قطعة المخزون إلى "تم التسليم"
       inventoryItem.status = 'delivered';
       await inventoryItem.save();
 
-      res.status(201).json({ msg: 'تم توثيق عملية التسليم بنجاح' });
+      res.status(201).json({ msg: 'تم توثيق التسليم وتحديث نوع الدفع بنجاح' });
 
     } catch (err) {
       console.error("ERROR IN POST /record :", err); 
