@@ -36,3 +36,29 @@
     transform: rotate(360deg);
   }
 }
+
+@media print {
+  .barcode-card {
+    width: 7cm;
+    height: 3.5cm;
+    padding: 0.2cm;
+    margin-bottom: 0.3cm; /* إضافة مسافة بسيطة بين الملصقات عمودياً */
+    border: 1px dashed #ccc; /* إضافة حدود متقطعة لتسهيل القص (اختياري) */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box; /* يضمن أن الحجم المحدد يشمل الحواف والهامش الداخلي */
+  }
+
+  .barcode-card .school-name {
+    font-size: 8pt;
+    margin-bottom: 2px;
+  }
+  
+  .barcode-card .item-details {
+    font-size: 7pt;
+    margin-top: 2px;
+  }
+}
