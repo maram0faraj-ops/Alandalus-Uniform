@@ -25,7 +25,7 @@ router.get('/low-stock-alerts', async (req, res) => {
         const alerts = await Inventory.aggregate([
             { $match: { status: 'in_stock' } },
             { $group: { _id: "$uniform", quantity: { $sum: 1 } } },
-            { $match: { quantity: { $lte: 50 } } },
+            { $match: { quantity: { $lte: 25 } } },
             { $lookup: { from: 'uniforms', localField: '_id', foreignField: '_id', as: 'uniformDetails' } },
             { $unwind: "$uniformDetails" },
             { $sort: { quantity: 1 } }
