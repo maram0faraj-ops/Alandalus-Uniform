@@ -17,7 +17,7 @@ const Inventory = require('../models/Inventory');
  * @access  Private
  */
 inventoryRouter.post('/add', auth, async (req, res) => {
-    const { stage, type, size, paymentType, quantity } = req.body;
+    const { stage, type, size, quantity } = req.body;
 
     // Validate quantity
     if (!Number.isInteger(quantity) || quantity <= 0) {
@@ -26,9 +26,9 @@ inventoryRouter.post('/add', auth, async (req, res) => {
 
     try {
         // Find if the uniform type already exists, if not, create it
-        let uniform = await Uniform.findOne({ stage, type, size, paymentType });
+        let uniform = await Uniform.findOne({ stage, type, size });
         if (!uniform) {
-            uniform = new Uniform({ stage, type, size, paymentType });
+            uniform = new Uniform({ stage, type, size });
             await uniform.save();
         }
 

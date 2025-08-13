@@ -7,7 +7,6 @@ function AddStockPage() {
         stage: 'ابتدائي',
         type: 'رسمي',
         size: 32,
-        paymentType: 'مدفوع',
         quantity: 1,
     });
     const [message, setMessage] = useState('');
@@ -16,18 +15,13 @@ function AddStockPage() {
 
     const stages = ['رياض أطفال بنات', 'رياض أطفال بنين', 'طفولة مبكرة بنات', 'طفولة مبكرة بنين', 'ابتدائي', 'متوسط', 'ثانوي'];
     const types = ['رسمي', 'رياضي', 'جاكيت'];
-    const paymentTypes = ['مدفوع', 'مجاني'];
     const sizes = Array.from({ length: (50 - 24) + 1 }, (_, i) => 24 + i);
 
     const handleChange = (e) => {
         setMessage('');
         setError('');
         const { name, value } = e.target;
-
-        // ✅ **THIS IS THE FIX**
-        // Convert the quantity value to a number before setting the state.
         const finalValue = name === 'quantity' ? parseInt(value, 10) : value;
-
         setFormData({ ...formData, [name]: finalValue });
     };
 
@@ -75,14 +69,6 @@ function AddStockPage() {
                 <Col sm={9}>
                     <Form.Select name="size" value={formData.size} onChange={handleChange} required>
                     {sizes.map(s => <option key={s} value={s}>{s}</option>)}
-                    </Form.Select>
-                </Col>
-                </Form.Group>
-                <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>نوع الدفع</Form.Label>
-                <Col sm={9}>
-                    <Form.Select name="paymentType" value={formData.paymentType} onChange={handleChange} required>
-                    {paymentTypes.map(p => <option key={p} value={p}>{p}</option>)}
                     </Form.Select>
                 </Col>
                 </Form.Group>
