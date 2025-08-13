@@ -1,14 +1,16 @@
-// --- routes/delivery.js ---
 const express = require('express');
 const auth = require('../middleware/auth');
 const Inventory = require('../models/Inventory');
 const Delivery = require('../models/Delivery');
-const User = require('../models/User');
-const Uniform = require('../models/Uniform'); // <-- خطوة مهمة: استيراد نموذج الزي
+const User = require('../models/User'); // قد تحتاج هذا النموذج إذا كنت تستخدم بيانات المستخدم
 
 const deliveryRouter = express.Router();
 
-// المسار الخاص بالبحث عن الباركود (لا تغيير هنا)
+/**
+ * @route   GET /api/delivery/item/:barcode
+ * @desc    Fetch an inventory item by its barcode
+ * @access  Private (auth required)
+ */
 deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
     try {
         const searchBarcode = req.params.barcode;
@@ -32,44 +34,38 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
     }
 });
 
-// المسار الخاص بتوثيق عملية التسليم
+/**
+ * @route   POST /api/delivery/record
+ * @desc    Record a new delivery and update inventory status
+ * @access  Private (auth required)
+ */
 deliveryRouter.post('/record', auth, async (req, res) => {
-    // استقبال نوع الدفع من الواجهة الأمامية
     const { barcode, studentName, stage, grade, section, paymentType } = req.body;
     
     try {
-      // البحث عن قطعة المخزون
+      // Find the inventory item by barcode and ensure it is in stock
       const inventoryItem = await Inventory.findOne({ barcode: barcode, status: 'in_stock' });
       if (!inventoryItem) {
         return res.status(404).json({ msg: 'هذا الباركود غير صالح أو تم تسليمه مسبقاً' });
       }
 
-      // --- الجزء الجديد: تحديث نوع الدفع ---
-      // نقوم بتحديث نوع الدفع في مستند الزي الأصلي بناءً على اختيارك
-      if (paymentType) {
-        await Uniform.updateOne(
-            { _id: inventoryItem.uniform },
-            { $set: { paymentType: paymentType } }
-        );
-      }
-      // --- نهاية الجزء الجديد ---
-
-      // إنشاء سجل تسليم جديد
+      // Create a new delivery record, including the paymentType from the request
       const newDelivery = new Delivery({
         inventoryItem: inventoryItem._id,
-        deliveredBy: req.user.id,
+        deliveredBy: req.user.id, // Comes from the 'auth' middleware
         studentName,
         stage,
         grade,
-        section
+        section,
+        paymentType: paymentType // Save the payment type with the delivery record
       });
       await newDelivery.save();
 
-      // تحديث حالة قطعة المخزون إلى "تم التسليم"
+      // Update the inventory item's status to 'delivered'
       inventoryItem.status = 'delivered';
       await inventoryItem.save();
 
-      res.status(201).json({ msg: 'تم توثيق التسليم وتحديث نوع الدفع بنجاح' });
+      res.status(201).json({ msg: 'تم توثيق عملية التسليم بنجاح' });
 
     } catch (err) {
       console.error("ERROR IN POST /record :", err); 

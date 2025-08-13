@@ -7,6 +7,8 @@ const DeliverySchema = new mongoose.Schema({
   stage: { type: String, required: true },
   grade: { type: String, required: true },
   section: { type: String, required: true },
+  // تمت إضافة الحقل هنا
+  paymentType: { type: String, required: true, enum: ['مدفوع', 'مجاني'] },
   deliveryDate: { type: Date, default: Date.now }
 });
 
