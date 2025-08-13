@@ -12,7 +12,7 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
     try {
         const searchBarcode = req.params.barcode;
         
-        // إضافة جديدة: لطباعة ما يتم البحث عنه بالضبط
+        // لطباعة ما يتم البحث عنه
         console.log(`DATABASE_QUERY: Searching for barcode: "${searchBarcode}" with status: "in_stock"`);
 
         const item = await Inventory.findOne({ 
@@ -20,7 +20,7 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
             status: 'in_stock' 
         }).populate('uniform');
 
-        // إضافة جديدة: لطباعة نتيجة البحث
+        // لطباعة نتيجة البحث
         console.log("DATABASE_RESULT:", item);
 
         if (!item) { 
@@ -35,7 +35,8 @@ deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
 
 // المسار الخاص بتوثيق عملية التسليم
 deliveryRouter.post('/record', auth, async (req, res) => {
-    const { barcode, studentName, stage, grade, section } = req.body;
+    // تم إضافة paymentType إلى المتغيرات المستلمة
+    const { barcode, studentName, stage, grade, section, paymentType } = req.body;
     
     try {
       // Find the inventory item by barcode

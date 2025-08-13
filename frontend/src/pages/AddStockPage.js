@@ -15,7 +15,7 @@ function AddStockPage() {
 
     const stages = ['رياض أطفال بنات', 'رياض أطفال بنين', 'طفولة مبكرة بنات', 'طفولة مبكرة بنين', 'ابتدائي', 'متوسط', 'ثانوي'];
     const types = ['رسمي', 'رياضي', 'جاكيت'];
-    const sizes = Array.from({ length: (50 - 24) + 1 }, (_, i) => 24 + i);
+    const sizes = Array.from({ length: (60 - 24) + 1 }, (_, i) => 24 + i); // <-- تم التعديل هنا
 
     const handleChange = (e) => {
         setMessage('');
