@@ -147,7 +147,7 @@ function AdminDashboard() {
         <Col>
           <Card className="shadow-sm">
             <Card.Header className="bg-warning text-dark">
-              <h5>تنبيهات المخزون المنخفض (50 قطعة أو أقل) ⚠️</h5>
+              <h5>تنبيهات المخزون المنخفض (25 قطعة أو أقل) ⚠️</h5> 
             </Card.Header>
             <ListGroup variant="flush">
               {lowStockAlerts.length > 0 ? (
