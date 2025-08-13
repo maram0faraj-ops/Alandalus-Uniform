@@ -11,6 +11,7 @@ function PrintBarcodesPage() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
+        // تم تعديل الاستعلام ليجلب فقط القطع التي لم تطبع بعد (إذا دعت الحاجة لذلك مستقبلاً)
         const response = await api.get('/api/inventory?status=in_stock');
         setItems(response.data);
       } catch (err) {
@@ -45,8 +46,9 @@ function PrintBarcodesPage() {
         <div className="printable">
           <Row>
             {items.length > 0 ? items.map((item) => (
-              // xs={6} creates a 2-column layout (12 / 6 = 2)
-              <Col xs={6} key={item._id} className="barcode-wrapper">
+              // -- تم التعديل هنا --
+              // xs={4} لإنشاء تخطيط من 3 أعمدة (12 / 4 = 3)
+              <Col xs={4} key={item._id} className="barcode-wrapper">
                 {item.uniform ? (
                   <div className="barcode-card">
                     <p className="school-name">مدارس الأندلس الأهلية</p>
@@ -71,4 +73,4 @@ function PrintBarcodesPage() {
   );
 }
 
-export default PrintBarcodesPage;
+export default PrintBarcodesPage; 
