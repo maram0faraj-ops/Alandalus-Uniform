@@ -4,7 +4,7 @@ import api from '../api';
 
 function AddStockPage() {
     const [formData, setFormData] = useState({
-        stage: 'ابتدائي',
+        stage: ' ابتدائي بنات',
         type: 'رسمي',
         size: 32,
         quantity: 1,
@@ -15,7 +15,7 @@ function AddStockPage() {
 
     const stages = ['رياض أطفال بنات', 'رياض أطفال بنين', ' ابتدائي بنات', ' ابتدائي بنين', 'متوسط', 'ثانوي'];
     const types = ['رسمي', 'رياضي', 'جاكيت'];
-    const sizes = Array.from({ length: (60 - 24) + 1 }, (_, i) => 24 + i); // <-- تم التعديل هنا
+    const sizes = Array.from({ length: (60 - 10) + 1 }, (_, i) => 10 + i); // <-- تم التعديل هنا
 
     const handleChange = (e) => {
         setMessage('');
