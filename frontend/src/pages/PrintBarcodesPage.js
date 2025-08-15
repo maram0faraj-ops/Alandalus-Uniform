@@ -1,19 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Spinner, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Button, Spinner, Alert, Form, Card } from 'react-bootstrap';
 import api from '../api';
 import BarcodeRenderer from '../components/BarcodeRenderer';
 
 function PrintBarcodesPage() {
-  const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]); // لتخزين كل القطع الأصلية
+  const [filteredItems, setFilteredItems] = useState([]); // لتخزين القطع بعد الفلترة
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // حالة لتخزين خيارات الفلترة المتاحة (المراحل، الأنواع، المقاسات)
+  const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
 
+  // حالة لتخزين قيم الفلاتر المختارة
+  const [filters, setFilters] = useState({
+    stage: 'all',
+    type: 'all',
+    size: 'all',
+  });
+
+  // 1. جلب البيانات واستخلاص خيارات الفلترة عند تحميل الصفحة لأول مرة
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        // تم تعديل الاستعلام ليجلب فقط القطع التي لم تطبع بعد (إذا دعت الحاجة لذلك مستقبلاً)
         const response = await api.get('/api/inventory?status=in_stock');
-        setItems(response.data);
+        const data = response.data;
+        setAllItems(data);
+        setFilteredItems(data);
+
+        // استخلاص القيم الفريدة لخيارات الفلترة
+        const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))];
+        const uniqueTypes = [...new Set(data.map(item => item.uniform?.type).filter(Boolean))];
+        const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
+        
+        setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
+
       } catch (err) {
         setError('فشل في جلب بيانات المخزون');
         console.error(err);
@@ -24,16 +45,82 @@ function PrintBarcodesPage() {
     fetchItems();
   }, []);
 
+  // 2. تطبيق الفلاتر عند تغيير أي من خيارات الفلترة
+  useEffect(() => {
+    let result = allItems;
+
+    if (filters.stage !== 'all') {
+      result = result.filter(item => item.uniform?.stage === filters.stage);
+    }
+    if (filters.type !== 'all') {
+      result = result.filter(item => item.uniform?.type === filters.type);
+    }
+    if (filters.size !== 'all') {
+      // تحويل المقاس إلى رقم للمقارنة الصحيحة
+      result = result.filter(item => item.uniform?.size === Number(filters.size));
+    }
+    
+    setFilteredItems(result);
+  }, [filters, allItems]);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
+  
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <Container className="mt-5">
-      {/* Non-printable section */}
+      {/* --- قسم الفلاتر (لا يظهر عند الطباعة) --- */}
+      <div className="no-print">
+        <Card className="mb-4">
+          <Card.Header>
+            <h5>فلترة النتائج</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label>المرحلة الدراسية</Form.Label>
+                  <Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}>
+                    <option value="all">الكل</option>
+                    {filterOptions.stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label>نوع الزي</Form.Label>
+                  <Form.Select name="type" value={filters.type} onChange={handleFilterChange}>
+                    <option value="all">الكل</option>
+                    {filterOptions.types.map(type => <option key={type} value={type}>{type}</option>)}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label>المقاس</Form.Label>
+                  <Form.Select name="size" value={filters.size} onChange={handleFilterChange}>
+                    <option value="all">الكل</option>
+                    {filterOptions.sizes.map(size => <option key={size} value={size}>{size}</option>)}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      </div>
+
+      {/* --- قسم التحكم بالطباعة (لا يظهر عند الطباعة) --- */}
       <div className="d-flex justify-content-between align-items-center mb-4 no-print">
-        <h2>طباعة الباركود</h2>
-        <Button variant="success" onClick={handlePrint} disabled={items.length === 0}>
+        <h2>طباعة الباركود ({filteredItems.length} قطعة)</h2>
+        <Button variant="success" onClick={handlePrint} disabled={filteredItems.length === 0}>
           طباعة الملصقات
         </Button>
       </div>
@@ -41,13 +128,11 @@ function PrintBarcodesPage() {
       {loading && <div className="text-center"><Spinner animation="border" /></div>}
       {error && <Alert variant="danger" className="no-print">{error}</Alert>}
 
-      {/* Printable section with a Flexbox Grid */}
+      {/* --- قسم الطباعة --- */}
       {!loading && !error && (
         <div className="printable">
           <Row>
-            {items.length > 0 ? items.map((item) => (
-              // -- تم التعديل هنا --
-              // xs={4} لإنشاء تخطيط من 3 أعمدة (12 / 4 = 3)
+            {filteredItems.length > 0 ? filteredItems.map((item) => (
               <Col xs={4} key={item._id} className="barcode-wrapper">
                 {item.uniform ? (
                   <div className="barcode-card">
@@ -63,7 +148,7 @@ function PrintBarcodesPage() {
               </Col>
             )) : (
               <Col>
-                <Alert variant="info" className="no-print">لا يوجد قطع في المخزون لعرضها.</Alert>
+                <Alert variant="info" className="no-print">لا توجد نتائج تطابق خيارات البحث.</Alert>
               </Col>
             )}
           </Row>
@@ -73,4 +158,4 @@ function PrintBarcodesPage() {
   );
 }
 
-export default PrintBarcodesPage; 
+export default PrintBarcodesPage;
