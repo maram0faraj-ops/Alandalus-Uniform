@@ -62,3 +62,20 @@
     margin-top: 2px;
   }
 }
+/* Hide elements with this class only when printing */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .hide-on-print {
+    display: none !important;
+  }
+}
+
+/* Style for the checkbox on screen */
+.barcode-checkbox {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 10;
+}
