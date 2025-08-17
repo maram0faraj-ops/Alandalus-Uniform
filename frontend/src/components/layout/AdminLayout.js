@@ -1,24 +1,21 @@
 import React from 'react';
-import { Navbar, Container, Nav } from 'react-bootstrap';
+import { Navbar, Container, Nav, NavDropdown } from 'react-bootstrap'; // <-- Import NavDropdown
 import { Link, useNavigate } from 'react-router-dom';
-// استبدل new-logo-name.png بالاسم الجديد الفعلي الذي اخترته للشعار الثاني
-import logo from '../../assets/images/logo2.png';
+ import logo from '../../assets/images/logo2.png';
+
 function AdminLayout({ children }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Clear user session from localStorage
+   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    // Redirect to login page
-    navigate('/login');
+     navigate('/login');
   };
 
   return (
     <div>
       <Navbar bg="dark" variant="dark" expand="lg" collapseOnSelect>
-        <Container>
-          {/* 2. Add the new logo to the Navbar */}
+         <Container>
           <Navbar.Brand as={Link} to="/admin/dashboard">
             <img
               src={logo}
@@ -34,7 +31,14 @@ function AdminLayout({ children }) {
               <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
               <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
               <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
-              <Nav.Link as={Link} to="/admin/reports">التقارير</Nav.Link>
+              
+              {/* --- تم التعديل هنا --- */}
+              {/* تم تجميع التقارير في قائمة منسدلة */}
+              <NavDropdown title="التقارير" id="reports-dropdown">
+                <NavDropdown.Item as={Link} to="/admin/reports">تقرير التسليم</NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/admin/reports/inventory">تقرير المخزون</NavDropdown.Item>
+              </NavDropdown>
+
             </Nav>
             <Nav>
               <Nav.Link onClick={handleLogout}>تسجيل الخروج</Nav.Link>
