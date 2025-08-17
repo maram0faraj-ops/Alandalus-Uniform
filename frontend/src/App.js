@@ -12,15 +12,15 @@ import DeliverUniformPage from './pages/DeliverUniformPage';
 import AdminLayout from './components/layout/AdminLayout';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
-import Reports from './pages/Reports'; // استيراد المكون الجديد
-import InventoryReport from './pages/InventoryReport';
-// ...
+import Reports from './pages/Reports';
+// --- تم التصحيح هنا ---
+// اسم الملف الصحيح هو InventoryReportPage.js
+import InventoryReportPage from './pages/InventoryReportPage'; 
 
 function App() {
   return (
     <Router>
       <div className="App">
-        {/* كل المسارات يجب أن تكون داخل هذا الغلاف */}
         <Routes>
 
           {/* المسارات العامة */}
@@ -41,10 +41,15 @@ function App() {
             element={<AdminRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></AdminRoute>} 
           />
           <Route 
-            path="/admin/reports" // <<< تم نقل هذا السطر إلى المكان الصحيح
+            path="/admin/reports"
             element={<AdminRoute><AdminLayout><Reports /></AdminLayout></AdminRoute>} 
           />
-          <Route path="/admin/reports/inventory" element={<InventoryReport />} />
+          {/* --- وتم التصحيح هنا --- */}
+          {/* تمت إضافة الحماية والتخطيط واستخدام اسم المكون الصحيح */}
+          <Route 
+            path="/admin/reports/inventory" 
+            element={<AdminRoute><AdminLayout><InventoryReportPage /></AdminLayout></AdminRoute>} 
+          />
 
           {/* صفحات الموظفين (محمية) */}
           <Route 
@@ -52,8 +57,8 @@ function App() {
              element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
           />
           
-          {/* المسار الافتراضي (يجب أن يكون آخر مسار داخل Routes) */}
-          <Route path="*" element={<Navigate to="/login" />} />  {/* <<< تم نقل هذا السطر إلى المكان الصحيح */}
+          {/* المسار الافتراضي */}
+          <Route path="*" element={<Navigate to="/login" />} />
 
         </Routes>
        </div>
