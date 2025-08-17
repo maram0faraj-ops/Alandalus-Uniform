@@ -15,8 +15,7 @@ import AdminRoute from './components/AdminRoute';
 import Reports from './pages/Reports'; // استيراد المكون الجديد
 import InventoryReport from './pages/InventoryReport';
 // ...
-<Route path="/admin/reports/inventory" element={<InventoryReport />} />
-// ...
+
 function App() {
   return (
     <Router>
@@ -45,7 +44,8 @@ function App() {
             path="/admin/reports" // <<< تم نقل هذا السطر إلى المكان الصحيح
             element={<AdminRoute><AdminLayout><Reports /></AdminLayout></AdminRoute>} 
           />
-          
+          <Route path="/admin/reports/inventory" element={<InventoryReport />} />
+
           {/* صفحات الموظفين (محمية) */}
           <Route 
              path="/staff/deliver"
