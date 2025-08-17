@@ -55,6 +55,7 @@ function AdminNav() {
               <>
                 <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
                 <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
+                <Nav.Link as={Link} to="/admin/reports/inventory">تقرير المخزون</Nav.Link>
               </>
             )}
           </Nav>

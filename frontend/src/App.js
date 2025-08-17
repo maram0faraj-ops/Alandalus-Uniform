@@ -13,7 +13,10 @@ import AdminLayout from './components/layout/AdminLayout';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import Reports from './pages/Reports'; // استيراد المكون الجديد
-
+import InventoryReport from './pages/InventoryReport';
+// ...
+<Route path="/admin/reports/inventory" element={<InventoryReport />} />
+// ...
 function App() {
   return (
     <Router>
