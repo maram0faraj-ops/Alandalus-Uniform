@@ -3,7 +3,8 @@ import { Container, Form, Button, Row, Col, Spinner, Card } from 'react-bootstra
 import api from '../api';
 import * as XLSX from 'xlsx';
 
-function InventoryReport() {
+// ------------------ تم التعديل هنا ------------------
+function InventoryReportPage() {
   const [filters, setFilters] = useState({ stage: '', type: '', size: '' });
   const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
   const [loadingSummary, setLoadingSummary] = useState(false);
@@ -13,7 +14,6 @@ function InventoryReport() {
   useEffect(() => {
     const fetchFilterOptions = async () => {
         try {
-            // يتم جلب البيانات مرة واحدة لملء القوائم المنسدلة
             const response = await api.post('/api/reports/inventory-details', {});
             const data = response.data;
             const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))];
@@ -133,4 +133,5 @@ function InventoryReport() {
   );
 }
 
-export default InventoryReport;
+// ------------------ وتم التعديل هنا ------------------
+export default InventoryReportPage;
