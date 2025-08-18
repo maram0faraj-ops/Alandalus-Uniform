@@ -1,23 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Table, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { Container, Table, Button, Spinner, Alert, Modal, Card, Form, Row, Col } from 'react-bootstrap';
 import api from '../api';
 
 function ManageInventoryPage() {
-    const [items, setItems] = useState([]);
+    // --- حالات جديدة للفلترة ---
+    const [allItems, setAllItems] = useState([]); // لتخزين القائمة الكاملة
+    const [filteredItems, setFilteredItems] = useState([]); // لعرض القائمة بعد الفلترة
+    const [filters, setFilters] = useState({ stage: 'all', type: 'all', size: 'all' });
+    const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     
-    // State for the confirmation modal
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
+    // 1. جلب البيانات واستخلاص خيارات الفلترة
     useEffect(() => {
         const fetchItems = async () => {
             try {
                 const response = await api.get('/api/inventory?status=in_stock');
-                setItems(response.data);
+                const data = response.data;
+                setAllItems(data);
+                setFilteredItems(data);
+
+                // استخلاص القيم الفريدة لخيارات الفلترة
+                const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))];
+                const uniqueTypes = [...new Set(data.map(item => item.uniform?.type).filter(Boolean))];
+                const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
+                
+                setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
+
             } catch (err) {
-                setError('Failed to fetch inventory data.');
+                setError('فشل في جلب بيانات المخزون.');
             } finally {
                 setLoading(false);
             }
@@ -25,29 +40,45 @@ function ManageInventoryPage() {
         fetchItems();
     }, []);
 
-    // Function to open the confirmation modal
+    // 2. تطبيق الفلاتر عند تغيير أي خيار
+    useEffect(() => {
+        let result = allItems;
+        if (filters.stage !== 'all') {
+            result = result.filter(item => item.uniform?.stage === filters.stage);
+        }
+        if (filters.type !== 'all') {
+            result = result.filter(item => item.uniform?.type === filters.type);
+        }
+        if (filters.size !== 'all') {
+            result = result.filter(item => item.uniform?.size === Number(filters.size));
+        }
+        setFilteredItems(result);
+    }, [filters, allItems]);
+
+    const handleFilterChange = (e) => {
+        setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
     const handleShowConfirmModal = (item) => {
         setItemToDelete(item);
         setShowConfirmModal(true);
     };
 
-    // Function to close the confirmation modal
     const handleCloseConfirmModal = () => {
         setItemToDelete(null);
         setShowConfirmModal(false);
     };
 
-    // Function to handle the actual deletion
     const handleDeleteItem = async () => {
         if (!itemToDelete) return;
-
         try {
             await api.delete(`/api/inventory/${itemToDelete._id}`);
-            // Remove the item from the local state to update the UI instantly
-            setItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
-            handleCloseConfirmModal(); // Close the modal on success
+            // تحديث القائمتين بعد الحذف
+            setAllItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
+            setFilteredItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
+            handleCloseConfirmModal();
         } catch (err) {
-            setError('Failed to delete the item. Please try again.');
+            setError('فشل في حذف القطعة. يرجى المحاولة مرة أخرى.');
             console.error(err);
         }
     };
@@ -58,23 +89,58 @@ function ManageInventoryPage() {
     return (
         <>
             <Container className="mt-5">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Manage Inventory</h2>
-                </div>
+                <h2 className="mb-4">إدارة المخزون</h2>
+
+                {/* --- قسم الفلاتر الجديد --- */}
+                <Card className="mb-4">
+                    <Card.Header><h5>بحث وتصفية</h5></Card.Header>
+                    <Card.Body>
+                        <Row>
+                            <Col md={4}>
+                                <Form.Group>
+                                    <Form.Label>المرحلة</Form.Label>
+                                    <Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}>
+                                        <option value="all">الكل</option>
+                                        {filterOptions.stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={4}>
+                                <Form.Group>
+                                    <Form.Label>نوع الزي</Form.Label>
+                                    <Form.Select name="type" value={filters.type} onChange={handleFilterChange}>
+                                        <option value="all">الكل</option>
+                                        {filterOptions.types.map(type => <option key={type} value={type}>{type}</option>)}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={4}>
+                                <Form.Group>
+                                    <Form.Label>المقاس</Form.Label>
+                                    <Form.Select name="size" value={filters.size} onChange={handleFilterChange}>
+                                        <option value="all">الكل</option>
+                                        {filterOptions.sizes.map(size => <option key={size} value={size}>{size}</option>)}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </Card.Body>
+                </Card>
+
                 <Table striped bordered hover responsive>
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Stage</th>
-                            <th>Type</th>
-                            <th>Size</th>
-                            <th>Barcode</th>
-                            <th>Entry Date</th>
-                            <th>Actions</th>
+                            <th>المرحلة</th>
+                            <th>نوع الزي</th>
+                            <th>المقاس</th>
+                            <th>الباركود</th>
+                            <th>تاريخ الإضافة</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item, index) => (
+                        {filteredItems.map((item, index) => (
                             <tr key={item._id}>
                                 <td>{index + 1}</td>
                                 <td>{item.uniform?.stage}</td>
@@ -83,12 +149,8 @@ function ManageInventoryPage() {
                                 <td>{item.barcode}</td>
                                 <td>{new Date(item.entryDate).toLocaleDateString('ar-SA')}</td>
                                 <td>
-                                    <Button 
-                                        variant="danger" 
-                                        size="sm"
-                                        onClick={() => handleShowConfirmModal(item)}
-                                    >
-                                        Delete
+                                    <Button variant="danger" size="sm" onClick={() => handleShowConfirmModal(item)}>
+                                        حذف
                                     </Button>
                                 </td>
                             </tr>
@@ -97,23 +159,18 @@ function ManageInventoryPage() {
                 </Table>
             </Container>
 
-            {/* Confirmation Modal */}
             <Modal show={showConfirmModal} onHide={handleCloseConfirmModal} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Confirm Deletion</Modal.Title>
+                    <Modal.Title>تأكيد الحذف</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Are you sure you want to permanently delete this item?
+                    هل أنت متأكد من رغبتك في حذف هذه القطعة بشكل نهائي؟
                     <br />
-                    <strong>Barcode: {itemToDelete?.barcode}</strong>
+                    <strong>الباركود: {itemToDelete?.barcode}</strong>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseConfirmModal}>
-                        Cancel
-                    </Button>
-                    <Button variant="danger" onClick={handleDeleteItem}>
-                        Confirm Delete
-                    </Button>
+                    <Button variant="secondary" onClick={handleCloseConfirmModal}>إلغاء</Button>
+                    <Button variant="danger" onClick={handleDeleteItem}>تأكيد الحذف</Button>
                 </Modal.Footer>
             </Modal>
         </>
