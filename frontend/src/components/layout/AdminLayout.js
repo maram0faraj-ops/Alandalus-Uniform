@@ -30,7 +30,10 @@ function AdminLayout({ children }) {
               <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>
               <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
               <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
+              
+              {/* --- الرابط الجديد لصفحة إدارة المخزون --- */}
               <Nav.Link as={Link} to="/admin/manage-inventory">إدارة المخزون</Nav.Link>
+              
               <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
               
               <NavDropdown title="التقارير" id="reports-dropdown">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Navbar, Container, Nav } from 'react-bootstrap';
+import { Navbar, Container, Nav, NavDropdown } from 'react-bootstrap'; // <-- إضافة NavDropdown
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../../assets/images/logo2.png'; // تأكد من صحة هذا المسار
+import logo from '../../assets/images/logo2.png';
 
 function AdminNav() {
   const navigate = useNavigate();
@@ -40,22 +40,21 @@ function AdminNav() {
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto">
-            {/* === الجزء الأهم: العرض الشرطي للروابط === */}
-
-            {/* يظهر للمسؤول فقط */}
             {userRole === 'admin' && (
               <Nav.Link as={Link} to="/admin/dashboard">الرئيسية</Nav.Link>
             )}
 
-            {/* يظهر للمسؤول والموظف */}
             <Nav.Link as={Link} to="/staff/deliver">تسليم الزي</Nav.Link>
             
-            {/* يظهر للمسؤول فقط */}
             {userRole === 'admin' && (
               <>
                 <Nav.Link as={Link} to="/admin/add-stock">إضافة مخزون</Nav.Link>
+                <Nav.Link as={Link} to="/admin/manage-inventory">إدارة المخزون</Nav.Link>
                 <Nav.Link as={Link} to="/admin/print-barcodes">طباعة الباركود</Nav.Link>
-                <Nav.Link as={Link} to="/admin/reports/inventory">تقرير المخزون</Nav.Link>
+                <NavDropdown title="التقارير" id="nav-reports-dropdown">
+                  <NavDropdown.Item as={Link} to="/admin/reports">تقرير التسليم</NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/admin/reports/inventory">تقرير المخزون</NavDropdown.Item>
+                </NavDropdown>
               </>
             )}
           </Nav>

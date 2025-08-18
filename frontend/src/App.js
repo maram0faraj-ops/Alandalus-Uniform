@@ -13,7 +13,7 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import Reports from './pages/Reports';
 import InventoryReportPage from './pages/InventoryReportPage';
-import ManageInventoryPage from './pages/ManageInventoryPage'; // تأكد من إضافة هذا الاستيراد
+import ManageInventoryPage from './pages/ManageInventoryPage'; // <-- تأكد من استيراد الصفحة الجديدة
 
 function App() {
   return (
@@ -34,7 +34,8 @@ function App() {
             path="/admin/add-stock" 
             element={<AdminRoute><AdminLayout><AddStockPage /></AdminLayout></AdminRoute>} 
           />
-           <Route 
+          {/* --- المسار الجديد لصفحة إدارة المخزون --- */}
+          <Route 
             path="/admin/manage-inventory" 
             element={<AdminRoute><AdminLayout><ManageInventoryPage /></AdminLayout></AdminRoute>} 
           />
