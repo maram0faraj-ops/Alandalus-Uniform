@@ -1,4 +1,3 @@
-// App.js (النسخة الكاملة والصحيحة)
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
@@ -13,9 +12,8 @@ import AdminLayout from './components/layout/AdminLayout';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import Reports from './pages/Reports';
-// --- تم التصحيح هنا ---
-// اسم الملف الصحيح هو InventoryReportPage.js
-import InventoryReportPage from './pages/InventoryReportPage'; 
+import InventoryReportPage from './pages/InventoryReportPage';
+import ManageInventoryPage from './pages/ManageInventoryPage'; // تأكد من إضافة هذا الاستيراد
 
 function App() {
   return (
@@ -36,6 +34,10 @@ function App() {
             path="/admin/add-stock" 
             element={<AdminRoute><AdminLayout><AddStockPage /></AdminLayout></AdminRoute>} 
           />
+           <Route 
+            path="/admin/manage-inventory" 
+            element={<AdminRoute><AdminLayout><ManageInventoryPage /></AdminLayout></AdminRoute>} 
+          />
           <Route 
             path="/admin/print-barcodes" 
             element={<AdminRoute><AdminLayout><PrintBarcodesPage /></AdminLayout></AdminRoute>} 
@@ -44,8 +46,6 @@ function App() {
             path="/admin/reports"
             element={<AdminRoute><AdminLayout><Reports /></AdminLayout></AdminRoute>} 
           />
-          {/* --- وتم التصحيح هنا --- */}
-          {/* تمت إضافة الحماية والتخطيط واستخدام اسم المكون الصحيح */}
           <Route 
             path="/admin/reports/inventory" 
             element={<AdminRoute><AdminLayout><InventoryReportPage /></AdminLayout></AdminRoute>} 
