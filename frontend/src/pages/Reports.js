@@ -1,4 +1,3 @@
-// src/pages/Reports.js
 import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Spinner, Card } from 'react-bootstrap';
 import api from '../api';
@@ -7,8 +6,9 @@ function Reports() {
   const [filters, setFilters] = useState({
     stage: '',
     grade: '',
-    section: '', // <-- إضافة حقل الشعبة الجديد
-    deliveryDate: ''
+    section: '',
+    deliveryDateFrom: '', // تم تغيير الاسم ليعكس البداية
+    deliveryDateTo: ''      // <-- حقل جديد لنهاية الفترة
   });
   const [loading, setLoading] = useState(false);
 
@@ -45,8 +45,7 @@ function Reports() {
       <Card className="p-4 shadow-sm">
         <Card.Title as="h2" className="text-center mb-4">إنشاء تقرير التسليم</Card.Title>
         <Form>
-          <Row className="mb-3">
-            {/* تم تحديث الأعمدة لتصبح 4 أعمدة */}
+          <Row className="mb-3 align-items-end">
             <Col md={3}>
               <Form.Group>
                 <Form.Label>المرحلة الدراسية</Form.Label>
@@ -63,7 +62,6 @@ function Reports() {
             <Col md={3}>
               <Form.Group>
                 <Form.Label>الصف</Form.Label>
-                {/* تم تحويل حقل الصف إلى قائمة منسدلة */}
                 <Form.Control as="select" name="grade" onChange={handleInputChange}>
                     <option value="">الكل</option>
                     <option value="الأول">الأول</option>
@@ -76,7 +74,6 @@ function Reports() {
               </Form.Group>
             </Col>
 
-            {/* تم إضافة حقل الشعبة */}
             <Col md={3}>
               <Form.Group>
                 <Form.Label>الشعبة</Form.Label>
@@ -90,15 +87,26 @@ function Reports() {
                 </Form.Control>
               </Form.Group>
             </Col>
-
+            
+            {/* --- تم التعديل هنا --- */}
             <Col md={3}>
-              <Form.Group>
-                <Form.Label>تاريخ التسليم (من)</Form.Label>
-                <Form.Control type="date" name="deliveryDate" onChange={handleInputChange} />
-              </Form.Group>
+              <Row>
+                  <Col sm={6}>
+                      <Form.Group>
+                          <Form.Label>من تاريخ</Form.Label>
+                          <Form.Control type="date" name="deliveryDateFrom" onChange={handleInputChange} />
+                      </Form.Group>
+                  </Col>
+                  <Col sm={6}>
+                      <Form.Group>
+                          <Form.Label>إلى تاريخ</Form.Label>
+                          <Form.Control type="date" name="deliveryDateTo" onChange={handleInputChange} />
+                      </Form.Group>
+                  </Col>
+              </Row>
             </Col>
           </Row>
-          <div className="d-grid">
+          <div className="d-grid mt-4">
               <Button variant="success" size="lg" onClick={handleExport} disabled={loading}>
                 {loading ? <Spinner as="span" size="sm" /> : 'تصدير إلى Excel'}
               </Button>
