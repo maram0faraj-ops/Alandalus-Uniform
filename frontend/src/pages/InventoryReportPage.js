@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Form, Button, Row, Col, Spinner, Card, InputGroup } from 'react-bootstrap';
+import { Container, Form, Button, Row, Col, Spinner, Card } from 'react-bootstrap';
 import api from '../api';
 import * as XLSX from 'xlsx';
 
 function InventoryReportPage() {
-  const [filters, setFilters] = useState({ stage: '', type: '', size: '', entryDate: '' });
+  const [filters, setFilters] = useState({ 
+    stage: '', 
+    type: '', 
+    size: '', 
+    entryDateFrom: '', // <-- تم التعديل هنا
+    entryDateTo: ''      // <-- تم التعديل هنا
+  });
   const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -28,11 +34,8 @@ function InventoryReportPage() {
   const handleInputChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
-  
-  const clearDateFilter = () => {
-    setFilters(prev => ({...prev, entryDate: ''}));
-  };
 
+  // ... دوال تصدير البيانات (handleExportSummary, handleExportDetails) تبقى كما هي ...
   const handleExportSummary = async () => {
     setLoadingSummary(true);
     try {
@@ -45,11 +48,11 @@ function InventoryReportPage() {
       }));
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Summary Report');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير المخزون الملخص');
       XLSX.writeFile(workbook, 'InventorySummary_Report.xlsx');
     } catch (error) {
       console.error('Failed to export summary report:', error);
-      alert('Error exporting summary report.');
+      alert('حدث خطأ أثناء تصدير التقرير الملخص.');
     } finally {
       setLoadingSummary(false);
     }
@@ -64,20 +67,20 @@ function InventoryReportPage() {
         'نوع الزي': item.uniform?.type,
         'المقاس': item.uniform?.size,
         'الباركود': item.barcode,
-        // --- تم التعديل هنا ---
         'تاريخ ووقت الإضافة': new Date(item.entryDate).toLocaleString('ar-SA'),
       }));
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Detailed Report');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير المخزون المفصل');
       XLSX.writeFile(workbook, 'InventoryDetails_Report.xlsx');
     } catch (error) {
       console.error('Failed to export details report:', error);
-      alert('Error exporting details report.');
+      alert('حدث خطأ أثناء تصدير التقرير المفصل.');
     } finally {
       setLoadingDetails(false);
     }
   };
+
 
   return (
     <Container className="mt-4">
@@ -85,22 +88,63 @@ function InventoryReportPage() {
         <Card.Title as="h2" className="text-center mb-4">تقارير المخزون</Card.Title>
         <Form>
           <Row className="mb-3 align-items-end">
-            <Col md={3}><Form.Group><Form.Label>المرحلة الدراسية</Form.Label><Form.Control as="select" name="stage" value={filters.stage} onChange={handleInputChange}><option value="">الكل</option>{filterOptions.stages.map(o => <option key={o} value={o}>{o}</option>)}</Form.Control></Form.Group></Col>
-            <Col md={3}><Form.Group><Form.Label>نوع الزي</Form.Label><Form.Control as="select" name="type" value={filters.type} onChange={handleInputChange}><option value="">الكل</option>{filterOptions.types.map(o => <option key={o} value={o}>{o}</option>)}</Form.Control></Form.Group></Col>
-            <Col md={3}><Form.Group><Form.Label>المقاس</Form.Label><Form.Control as="select" name="size" value={filters.size} onChange={handleInputChange}><option value="">الكل</option>{filterOptions.sizes.map(o => <option key={o} value={o}>{o}</option>)}</Form.Control></Form.Group></Col>
             <Col md={3}>
-               <Form.Group>
-                  <Form.Label>تاريخ الإضافة</Form.Label>
-                  <InputGroup>
-                    <Form.Control type="date" name="entryDate" value={filters.entryDate} onChange={handleInputChange} />
-                    <Button variant="outline-secondary" onClick={clearDateFilter}>مسح</Button>
-                  </InputGroup>
-                </Form.Group>
+              <Form.Group>
+                <Form.Label>المرحلة الدراسية</Form.Label>
+                <Form.Control as="select" name="stage" onChange={handleInputChange}>
+                  <option value="">الكل</option>
+                  {filterOptions.stages.map(o => <option key={o} value={o}>{o}</option>)}
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>نوع الزي</Form.Label>
+                <Form.Control as="select" name="type" onChange={handleInputChange}>
+                  <option value="">الكل</option>
+                  {filterOptions.types.map(o => <option key={o} value={o}>{o}</option>)}
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>المقاس</Form.Label>
+                <Form.Control as="select" name="size" onChange={handleInputChange}>
+                  <option value="">الكل</option>
+                  {filterOptions.sizes.map(o => <option key={o} value={o}>{o}</option>)}
+                </Form.Control>
+              </Form.Group>
+            </Col>
+
+            {/* --- تم التعديل هنا --- */}
+            <Col md={3}>
+                <Row>
+                    <Col sm={6}>
+                        <Form.Group>
+                            <Form.Label>من تاريخ</Form.Label>
+                            <Form.Control type="date" name="entryDateFrom" onChange={handleInputChange} />
+                        </Form.Group>
+                    </Col>
+                    <Col sm={6}>
+                        <Form.Group>
+                            <Form.Label>إلى تاريخ</Form.Label>
+                            <Form.Control type="date" name="entryDateTo" onChange={handleInputChange} />
+                        </Form.Group>
+                    </Col>
+                </Row>
             </Col>
           </Row>
           <Row className="mt-4">
-            <Col md={6} className="d-grid mb-2 mb-md-0"><Button variant="primary" size="lg" onClick={handleExportSummary} disabled={loadingSummary}>{loadingSummary ? <Spinner as="span" size="sm" /> : '📥 تصدير التقرير الملخص (بالكمية)'}</Button></Col>
-            <Col md={6} className="d-grid"><Button variant="success" size="lg" onClick={handleExportDetails} disabled={loadingDetails}>{loadingDetails ? <Spinner as="span" size="sm" /> : '📄 تصدير التقرير المفصل (بالباركود)'}</Button></Col>
+            <Col md={6} className="d-grid mb-2 mb-md-0">
+              <Button variant="primary" size="lg" onClick={handleExportSummary} disabled={loadingSummary}>
+                {loadingSummary ? <Spinner as="span" size="sm" /> : '📥 تصدير التقرير الملخص (بالكمية)'}
+              </Button>
+            </Col>
+            <Col md={6} className="d-grid">
+              <Button variant="success" size="lg" onClick={handleExportDetails} disabled={loadingDetails}>
+                {loadingDetails ? <Spinner as="span" size="sm" /> : '📄 تصدير التقرير المفصل (بالباركود)'}
+              </Button>
+            </Col>
           </Row>
         </Form>
       </Card>
