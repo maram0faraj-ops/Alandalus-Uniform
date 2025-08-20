@@ -47,7 +47,12 @@ router.post('/export', async (req, res) => {
             { header: 'المقاس', key: 'uniformSize', width: 10 },
             { header: 'الباركود', key: 'barcode', width: 30 },
             { header: 'تم التسليم بواسطة', key: 'deliveredBy', width: 20 },
-            { header: 'تاريخ التسليم', key: 'deliveryDate', width: 20 },
+            { 
+              header: 'تاريخ التسليم', 
+              key: 'deliveryDate', 
+              width: 22, 
+              style: { numFmt: 'yyyy-mm-dd hh:mm:ss' } 
+            },
         ];
 
         deliveries.forEach(d => {
@@ -60,7 +65,7 @@ router.post('/export', async (req, res) => {
                 uniformSize: d.inventoryItem?.uniform?.size,
                 barcode: d.inventoryItem?.barcode,
                 deliveredBy: d.deliveredBy?.name,
-                deliveryDate: new Date(d.deliveryDate).toLocaleString('ar-SA'),
+                deliveryDate: new Date(d.deliveryDate),
             });
         });
 
@@ -74,6 +79,7 @@ router.post('/export', async (req, res) => {
         res.status(500).json({ message: 'فشل في إنشاء التقرير.' });
     }
 });
+
 
 // --- مسارات تقارير المخزون ---
 router.post('/inventory-summary', async (req, res) => {
