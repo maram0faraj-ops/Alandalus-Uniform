@@ -10,9 +10,17 @@ router.post('/export', async (req, res) => {
         const { stage, grade, section, deliveryDateFrom, deliveryDateTo } = req.body;
         const query = {};
 
-        if (stage) query.stage = stage;
-        if (grade) query.grade = grade;
-        if (section) query.section = section;
+        // --- تم تعديل منطق الفلترة هنا ---
+        if (stage) {
+            query.stage = { $regex: stage.trim(), $options: 'i' };
+        }
+        if (grade) {
+            query.grade = { $regex: grade.trim(), $options: 'i' };
+        }
+        if (section) {
+            query.section = { $regex: section.trim(), $options: 'i' };
+        }
+        // --- نهاية التعديل ---
 
         if (deliveryDateFrom || deliveryDateTo) {
             query.deliveryDate = {};
