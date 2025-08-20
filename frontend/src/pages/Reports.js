@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Spinner, Card } from 'react-bootstrap';
 import api from '../api';
 
@@ -7,10 +7,26 @@ function Reports() {
     stage: '',
     grade: '',
     section: '',
-    deliveryDateFrom: '', // تم تغيير الاسم ليعكس البداية
-    deliveryDateTo: ''      // <-- حقل جديد لنهاية الفترة
+    deliveryDateFrom: '',
+    deliveryDateTo: ''
   });
   const [loading, setLoading] = useState(false);
+  const [stageOptions, setStageOptions] = useState([]);
+
+  // useEffect لجلب المراحل الدراسية ديناميكيًا
+  useEffect(() => {
+    const fetchStageOptions = async () => {
+        try {
+            const response = await api.post('/api/reports/inventory-details', {});
+            const data = response.data;
+            const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))].sort();
+            setStageOptions(uniqueStages);
+        } catch (error) {
+            console.error('Failed to fetch stage options:', error);
+        }
+    };
+    fetchStageOptions();
+  }, []);
 
   const handleInputChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -23,7 +39,6 @@ function Reports() {
         { ...filters, exportType: 'excel' },
         { responseType: 'blob' }
       );
-
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -31,7 +46,6 @@ function Reports() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-
     } catch (error) {
       console.error('Failed to export report:', error);
       alert('حدث خطأ أثناء تصدير التقرير.');
@@ -51,14 +65,12 @@ function Reports() {
                 <Form.Label>المرحلة الدراسية</Form.Label>
                 <Form.Control as="select" name="stage" onChange={handleInputChange}>
                   <option value="">الكل</option>
-                  <option value="رياض أطفال">رياض أطفال</option>
-                   <option value="ابتدائي">ابتدائي</option>
-                  <option value="متوسط">متوسط</option>
-                  <option value="ثانوي">ثانوي</option>
+                  {stageOptions.map(stage => (
+                    <option key={stage} value={stage}>{stage}</option>
+                  ))}
                 </Form.Control>
               </Form.Group>
             </Col>
-
             <Col md={3}>
               <Form.Group>
                 <Form.Label>الصف</Form.Label>
@@ -73,7 +85,6 @@ function Reports() {
                 </Form.Control>
               </Form.Group>
             </Col>
-
             <Col md={3}>
               <Form.Group>
                 <Form.Label>الشعبة</Form.Label>
@@ -87,8 +98,6 @@ function Reports() {
                 </Form.Control>
               </Form.Group>
             </Col>
-            
-            {/* --- تم التعديل هنا --- */}
             <Col md={3}>
               <Row>
                   <Col sm={6}>
