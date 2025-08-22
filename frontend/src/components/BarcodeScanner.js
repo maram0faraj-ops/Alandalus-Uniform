@@ -6,68 +6,72 @@ const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
   const html5QrCodeRef = useRef(null);
 
   useEffect(() => {
-    if (!html5QrCodeRef.current) {
-      html5QrCodeRef.current = new Html5Qrcode(videoRef.current.id);
+    // التأكد من عدم وجود نسخة قديمة تعمل
+    if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+      html5QrCodeRef.current.stop();
     }
-    const html5QrCode = html5QrCodeRef.current;
+    
+    const html5QrCode = new Html5Qrcode(videoRef.current.id);
+    html5QrCodeRef.current = html5QrCode;
 
     const qrCodeSuccessCallback = (decodedText, decodedResult) => {
       onScanSuccess(decodedText);
     };
 
+    // --- تم تعديل كائن الإعدادات هنا ---
     const config = {
-      fps: 10, // العودة إلى 10 لمزيد من التوافق
+      fps: 10,
       qrbox: (viewfinderWidth, viewfinderHeight) => {
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
         const qrboxSize = Math.floor(minEdge * 0.7);
         return { width: qrboxSize, height: qrboxSize };
       },
       rememberLastUsedCamera: true,
-      supportedScanTypes: ["CODE_128"] // التركيز على نوع الباركود المستخدم فقط
+      supportedScanTypes: ["CODE_128"],
+      // تم دمج إعدادات الفيديو هنا بالطريقة الصحيحة
+      videoConstraints: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: "environment" // الأفضلية للكاميرا الخلفية
+      }
     };
 
-    // --- منطق جديد لتشغيل الكاميرا مع خيارات احتياطية ---
-
-    // المحاولة الأولى: طلب دقة عالية وكاميرا خلفية
-    const idealVideoConstraints = {
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-      facingMode: "environment"
-    };
-
+    // --- تم تعديل منطق تشغيل الكاميرا ---
     html5QrCode.start(
-      idealVideoConstraints,
+      undefined, // يتم تمرير undefined للسماح للمكتبة باستخدام videoConstraints من الـ config
       config,
       qrCodeSuccessCallback,
       (errorMessage) => { /* تجاهل */ }
     ).catch((err) => {
-      console.warn("فشل تشغيل الكاميرا بالدقة العالية، المحاولة الثانية:", err);
+      console.warn("فشل تشغيل الكاميرا بالإعدادات المثالية، تجربة الإعدادات الأساسية:", err);
       
-      // المحاولة الثانية: طلب الكاميرا الخلفية فقط (مثل الكود القديم)
+      // إعدادات احتياطية بدون دقة محددة
+      const fallbackConfig = { ...config };
+      delete fallbackConfig.videoConstraints; // حذف إعدادات الدقة العالية
+
       html5QrCode.start(
-        { facingMode: { exact: "environment" } },
-        config,
+        { facingMode: "environment" }, // طلب الكاميرا الخلفية فقط
+        fallbackConfig,
         qrCodeSuccessCallback,
         (errorMessage) => { /* تجاهل */ }
       ).catch((err2) => {
-        console.error("فشل تشغيل الكاميرا الخلفية، المحاولة الأخيرة:", err2);
-        
+        console.error("فشل تشغيل الكاميرا الخلفية، تجربة أي كاميرا:", err2);
         // المحاولة الأخيرة: طلب أي كاميرا متاحة
         html5QrCode.start(
-          undefined, // السماح للمكتبة باختيار الكاميرا
-          config,
+          undefined,
+          fallbackConfig,
           qrCodeSuccessCallback,
           (errorMessage) => { /* تجاهل */ }
         ).catch((err3) => {
-          console.error("فشل تشغيل أي كاميرا متاحة.", err3);
+          console.error("فشل تشغيل أي كاميرا.", err3);
           onScanError(err3);
         });
       });
     });
 
     return () => {
-      if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => console.error("فشل إيقاف الماسح الضوئي.", err));
+      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+        html5QrCodeRef.current.stop().catch(err => console.error("فشل إيقاف الماسح الضوئي.", err));
       }
     };
   }, [onScanSuccess, onScanError]);
