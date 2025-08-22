@@ -15,53 +15,46 @@ const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
       onScanSuccess(decodedText);
     };
 
-    // إعدادات محسّنة للجوال
     const config = {
-      fps: 10, // عدد الإطارات في الثانية
+      fps: 15, // <-- زيادة عدد الإطارات في الثانية بشكل طفيف
       qrbox: (viewfinderWidth, viewfinderHeight) => {
-        // تحديد حجم مربع البحث ليكون أصغر وأكثر تركيزاً
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const qrboxSize = Math.floor(minEdge * 0.7); // استخدام 70% من أصغر بعد
+        const qrboxSize = Math.floor(minEdge * 0.7);
         return {
           width: qrboxSize,
           height: qrboxSize,
         };
       },
-      rememberLastUsedCamera: true, // تذكر آخر كاميرا تم استخدامها
-      supportedScanTypes: [ // تحديد أنواع الباركود لزيادة سرعة البحث
-        "CODE_128",
-        "CODE_39",
-        "EAN_13",
-        "EAN_8",
-        "UPC_A",
-        "UPC_E"
-      ]
+      rememberLastUsedCamera: true,
+      supportedScanTypes: ["CODE_128", "CODE_39", "EAN_13"]
     };
 
-    // طلب تشغيل الكاميرا الخلفية "environment"
+    // --- التحسين الرئيسي: تحديد دقة الفيديو ---
+    const videoConstraints = {
+      width: { ideal: 1280 }, // طلب عرض مثالي 1280px
+      height: { ideal: 720 },  // طلب ارتفاع مثالي 720px
+      facingMode: "environment" // الأفضلية للكاميرا الخلفية
+    };
+
     html5QrCode.start(
-      { facingMode: { exact: "environment" } },
+      videoConstraints, // <-- استخدام إعدادات الدقة الجديدة
       config,
       qrCodeSuccessCallback,
-      (errorMessage) => {
-        // هذه الدالة تُستدعى لكل إطار لا يتم فيه العثور على باركود
-        // يمكننا تجاهلها لتبقى الكاميرا مفتوحة
-      }
+      (errorMessage) => { /* تجاهل الأخطاء البسيطة */ }
     ).catch((err) => {
-      console.error("Failed to start rear camera, trying any available camera", err);
-      // إذا فشلت الكاميرا الخلفية، جرب أي كاميرا متاحة
+      console.error("Failed to start camera with ideal constraints, trying default", err);
+      // في حال فشل الدقة العالية، جرب الإعدادات الافتراضية
       html5QrCode.start(
-        undefined, // السماح للمكتبة باختيار الكاميرا
+        { facingMode: "environment" },
         config,
         qrCodeSuccessCallback,
         (errorMessage) => {}
       ).catch(onScanError);
     });
 
-    // دالة التنظيف لإيقاف الكاميرا
     return () => {
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => console.error("Failed to stop scanner on cleanup.", err));
+        html5QrCode.stop().catch(err => console.error("Failed to stop scanner.", err));
       }
     };
   }, [onScanSuccess, onScanError]);
