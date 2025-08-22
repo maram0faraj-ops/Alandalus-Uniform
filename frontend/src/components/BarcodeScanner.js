@@ -10,43 +10,50 @@ const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
       onScanSuccess(decodedText);
     };
 
-    const config = {
+    // --- الإعدادات الأساسية ---
+    const baseConfig = {
       fps: 10,
       qrbox: (viewfinderWidth, viewfinderHeight) => {
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
         return { width: minEdge * 0.7, height: minEdge * 0.7 };
       },
+      rememberLastUsedCamera: true,
+      supportedScanTypes: ["CODE_128"]
+    };
+
+    // --- إعدادات الدقة العالية ---
+    const highResConfig = {
+      ...baseConfig,
+      videoConstraints: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
     };
 
     const startScanner = () => {
-      // التأكد من إيقاف أي نسخة قديمة قبل البدء
-      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        html5QrCodeRef.current.stop();
-      }
-      
       const html5QrCode = new Html5Qrcode(videoRef.current.id);
       html5QrCodeRef.current = html5QrCode;
 
       // المحاولة الأولى: كاميرا خلفية بدقة عالية
       html5QrCode.start(
-        { video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' } },
-        config,
+        { facingMode: 'environment' },
+        highResConfig,
         qrCodeSuccessCallback,
         (errorMessage) => {}
       ).catch(err1 => {
         console.warn("فشل الدقة العالية، تجربة الكاميرا الخلفية العادية", err1);
-        // المحاولة الثانية: كاميرا خلفية فقط
+        // المحاولة الثانية: كاميرا خلفية فقط (بدون دقة محددة)
         html5QrCode.start(
           { facingMode: 'environment' },
-          config,
+          baseConfig,
           qrCodeSuccessCallback,
           (errorMessage) => {}
         ).catch(err2 => {
           console.warn("فشل الكاميرا الخلفية، تجربة أي كاميرا متاحة", err2);
           // المحاولة الأخيرة: أي كاميرا متاحة
           html5QrCode.start(
-            {}, // تمرير كائن فارغ لاختيار الكاميرا الافتراضية
-            config,
+            undefined, // السماح للمكتبة باختيار الكاميرا
+            baseConfig,
             qrCodeSuccessCallback,
             (errorMessage) => {}
           ).catch(err3 => {
