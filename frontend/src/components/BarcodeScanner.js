@@ -16,45 +16,58 @@ const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
     };
 
     const config = {
-      fps: 15, // <-- زيادة عدد الإطارات في الثانية بشكل طفيف
+      fps: 10, // العودة إلى 10 لمزيد من التوافق
       qrbox: (viewfinderWidth, viewfinderHeight) => {
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
         const qrboxSize = Math.floor(minEdge * 0.7);
-        return {
-          width: qrboxSize,
-          height: qrboxSize,
-        };
+        return { width: qrboxSize, height: qrboxSize };
       },
       rememberLastUsedCamera: true,
-      supportedScanTypes: ["CODE_128", "CODE_39", "EAN_13"]
+      supportedScanTypes: ["CODE_128"] // التركيز على نوع الباركود المستخدم فقط
     };
 
-    // --- التحسين الرئيسي: تحديد دقة الفيديو ---
-    const videoConstraints = {
-      width: { ideal: 1280 }, // طلب عرض مثالي 1280px
-      height: { ideal: 720 },  // طلب ارتفاع مثالي 720px
-      facingMode: "environment" // الأفضلية للكاميرا الخلفية
+    // --- منطق جديد لتشغيل الكاميرا مع خيارات احتياطية ---
+
+    // المحاولة الأولى: طلب دقة عالية وكاميرا خلفية
+    const idealVideoConstraints = {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      facingMode: "environment"
     };
 
     html5QrCode.start(
-      videoConstraints, // <-- استخدام إعدادات الدقة الجديدة
+      idealVideoConstraints,
       config,
       qrCodeSuccessCallback,
-      (errorMessage) => { /* تجاهل الأخطاء البسيطة */ }
+      (errorMessage) => { /* تجاهل */ }
     ).catch((err) => {
-      console.error("Failed to start camera with ideal constraints, trying default", err);
-      // في حال فشل الدقة العالية، جرب الإعدادات الافتراضية
+      console.warn("فشل تشغيل الكاميرا بالدقة العالية، المحاولة الثانية:", err);
+      
+      // المحاولة الثانية: طلب الكاميرا الخلفية فقط (مثل الكود القديم)
       html5QrCode.start(
-        { facingMode: "environment" },
+        { facingMode: { exact: "environment" } },
         config,
         qrCodeSuccessCallback,
-        (errorMessage) => {}
-      ).catch(onScanError);
+        (errorMessage) => { /* تجاهل */ }
+      ).catch((err2) => {
+        console.error("فشل تشغيل الكاميرا الخلفية، المحاولة الأخيرة:", err2);
+        
+        // المحاولة الأخيرة: طلب أي كاميرا متاحة
+        html5QrCode.start(
+          undefined, // السماح للمكتبة باختيار الكاميرا
+          config,
+          qrCodeSuccessCallback,
+          (errorMessage) => { /* تجاهل */ }
+        ).catch((err3) => {
+          console.error("فشل تشغيل أي كاميرا متاحة.", err3);
+          onScanError(err3);
+        });
+      });
     });
 
     return () => {
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => console.error("Failed to stop scanner.", err));
+        html5QrCode.stop().catch(err => console.error("فشل إيقاف الماسح الضوئي.", err));
       }
     };
   }, [onScanSuccess, onScanError]);
