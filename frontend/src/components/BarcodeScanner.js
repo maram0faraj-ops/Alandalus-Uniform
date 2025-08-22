@@ -1,80 +1,100 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { Form } from 'react-bootstrap'; // <-- استيراد Form
 
 const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
   const videoRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  
+  // --- حالات جديدة لإدارة الكاميرات ---
+  const [cameras, setCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState('');
 
+  // 1. جلب قائمة الكاميرات المتاحة في الجهاز
   useEffect(() => {
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        setCameras(devices);
+        // محاولة اختيار الكاميرا الخلفية كخيار افتراضي
+        const rearCamera = devices.find(device => device.label.toLowerCase().includes('back'));
+        if (rearCamera) {
+          setSelectedCameraId(rearCamera.id);
+        } else {
+          // إذا لم يتم العثور على كاميرا خلفية، اختر أول كاميرا في القائمة
+          setSelectedCameraId(devices[0].id);
+        }
+      }
+    }).catch(err => {
+      console.error("Failed to get cameras.", err);
+      onScanError(err);
+    });
+  }, [onScanError]);
+
+  // 2. تشغيل الكاميرا عند اختيار كاميرا من القائمة
+  useEffect(() => {
+    if (!selectedCameraId) {
+      return;
+    }
+
     const qrCodeSuccessCallback = (decodedText, decodedResult) => {
       onScanSuccess(decodedText);
     };
 
-    // --- الإعدادات الأساسية ---
-    const baseConfig = {
+    const config = {
       fps: 10,
       qrbox: (viewfinderWidth, viewfinderHeight) => {
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
         return { width: minEdge * 0.7, height: minEdge * 0.7 };
       },
-      rememberLastUsedCamera: true,
-      supportedScanTypes: ["CODE_128"]
     };
 
-    // --- إعدادات الدقة العالية ---
-    const highResConfig = {
-      ...baseConfig,
-      videoConstraints: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    };
+    const html5QrCode = new Html5Qrcode(videoRef.current.id);
+    html5QrCodeRef.current = html5QrCode;
 
-    const startScanner = () => {
-      const html5QrCode = new Html5Qrcode(videoRef.current.id);
-      html5QrCodeRef.current = html5QrCode;
+    // إيقاف أي ماسح ضوئي قديم قبل تشغيل واحد جديد
+    if (html5QrCode.isScanning) {
+      html5QrCode.stop();
+    }
 
-      // المحاولة الأولى: كاميرا خلفية بدقة عالية
-      html5QrCode.start(
-        { facingMode: 'environment' },
-        highResConfig,
-        qrCodeSuccessCallback,
-        (errorMessage) => {}
-      ).catch(err1 => {
-        console.warn("فشل الدقة العالية، تجربة الكاميرا الخلفية العادية", err1);
-        // المحاولة الثانية: كاميرا خلفية فقط (بدون دقة محددة)
-        html5QrCode.start(
-          { facingMode: 'environment' },
-          baseConfig,
-          qrCodeSuccessCallback,
-          (errorMessage) => {}
-        ).catch(err2 => {
-          console.warn("فشل الكاميرا الخلفية، تجربة أي كاميرا متاحة", err2);
-          // المحاولة الأخيرة: أي كاميرا متاحة
-          html5QrCode.start(
-            undefined, // السماح للمكتبة باختيار الكاميرا
-            baseConfig,
-            qrCodeSuccessCallback,
-            (errorMessage) => {}
-          ).catch(err3 => {
-            console.error("فشل تشغيل جميع الكاميرات", err3);
-            onScanError(err3);
-          });
-        });
-      });
-    };
-
-    startScanner();
+    html5QrCode.start(
+      selectedCameraId, // <-- استخدام الكاميرا المحددة
+      config,
+      qrCodeSuccessCallback,
+      (errorMessage) => {}
+    ).catch(err => {
+      console.error(`Failed to start camera with id ${selectedCameraId}`, err);
+      onScanError(err);
+    });
 
     // دالة التنظيف
     return () => {
       if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        html5QrCodeRef.current.stop().catch(err => console.error("فشل إيقاف الماسح الضوئي.", err));
+        html5QrCodeRef.current.stop().catch(err => console.error("Failed to stop scanner.", err));
       }
     };
-  }, [onScanSuccess, onScanError]);
+  }, [selectedCameraId, onScanSuccess, onScanError]);
 
-  return <div id="reader" ref={videoRef} style={{ width: '100%' }}></div>;
+  return (
+    <div>
+      {/* --- قائمة منسدلة جديدة لاختيار الكاميرا --- */}
+      {cameras.length > 1 && (
+        <Form.Group className="mb-3">
+          <Form.Label>اختر الكاميرا</Form.Label>
+          <Form.Select 
+            value={selectedCameraId} 
+            onChange={e => setSelectedCameraId(e.target.value)}
+          >
+            {cameras.map(camera => (
+              <option key={camera.id} value={camera.id}>
+                {camera.label}
+              </option>
+            ))}
+          </Form.Select>
+        </Form.Group>
+      )}
+      <div id="reader" ref={videoRef} style={{ width: '100%' }}></div>
+    </div>
+  );
 };
 
 export default BarcodeScanner;
