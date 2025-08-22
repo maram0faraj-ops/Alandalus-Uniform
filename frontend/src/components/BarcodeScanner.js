@@ -1,48 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Form } from 'react-bootstrap';
 
 const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
   const videoRef = useRef(null);
   const html5QrCodeRef = useRef(null);
-  
-  const [cameras, setCameras] = useState([]);
-  const [selectedCameraId, setSelectedCameraId] = useState('');
 
-  // 1. جلب قائمة الكاميرات المتاحة في الجهاز
   useEffect(() => {
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        setCameras(devices);
-        
-        // --- تم تعديل منطق اختيار الكاميرا الافتراضية هنا ---
-        // ابحث أولاً عن كاميرا تحتوي على كلمة "back" أو "rear"
-        const rearCamera = devices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear')
-        );
-
-        if (rearCamera) {
-          // إذا تم العثور عليها، استخدمها
-          setSelectedCameraId(rearCamera.id);
-        } else {
-          // إذا لم يتم العثور عليها، افترض أن الكاميرا الأخيرة في القائمة هي الخلفية
-          setSelectedCameraId(devices[devices.length - 1].id);
-        }
-        // --- نهاية التعديل ---
-      }
-    }).catch(err => {
-      console.error("Failed to get cameras.", err);
-      onScanError(err);
-    });
-  }, [onScanError]);
-
-  // 2. تشغيل الكاميرا عند اختيار كاميرا من القائمة
-  useEffect(() => {
-    if (!selectedCameraId) {
-      return;
-    }
-
     const qrCodeSuccessCallback = (decodedText, decodedResult) => {
       onScanSuccess(decodedText);
     };
@@ -54,51 +17,39 @@ const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
         return { width: minEdge * 0.7, height: minEdge * 0.7 };
       },
     };
-
+    
     const html5QrCode = new Html5Qrcode(videoRef.current.id);
     html5QrCodeRef.current = html5QrCode;
 
-    if (html5QrCode.isScanning) {
-      html5QrCode.stop();
-    }
-
+    // المحاولة الأولى: طلب الكاميرا الخلفية مباشرة
     html5QrCode.start(
-      selectedCameraId,
+      { facingMode: "environment" }, // طلب الكاميرا الخلفية
       config,
       qrCodeSuccessCallback,
-      (errorMessage) => {}
+      (errorMessage) => {} // تجاهل رسائل الخطأ المستمرة
     ).catch(err => {
-      console.error(`Failed to start camera with id ${selectedCameraId}`, err);
-      onScanError(err);
+      console.warn("فشل تشغيل الكاميرا الخلفية، تجربة أي كاميرا متاحة", err);
+      // المحاولة الثانية (احتياطية): طلب أي كاميرا يجدها المتصفح
+      html5QrCode.start(
+        undefined, // السماح للمكتبة باختيار الكاميرا الافتراضية
+        config,
+        qrCodeSuccessCallback,
+        (errorMessage) => {}
+      ).catch(err2 => {
+        console.error("فشل تشغيل أي كاميرا", err2);
+        onScanError(err2);
+      });
     });
 
+    // دالة التنظيف لإيقاف الكاميرا عند الخروج من الصفحة
     return () => {
       if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        html5QrCodeRef.current.stop().catch(err => console.error("Failed to stop scanner.", err));
+        html5QrCodeRef.current.stop().catch(err => console.error("فشل إيقاف الماسح الضوئي.", err));
       }
     };
-  }, [selectedCameraId, onScanSuccess, onScanError]);
+  }, [onScanSuccess, onScanError]);
 
-  return (
-    <div>
-      {cameras.length > 1 && (
-        <Form.Group className="mb-3">
-          <Form.Label>اختر الكاميرا</Form.Label>
-          <Form.Select 
-            value={selectedCameraId} 
-            onChange={e => setSelectedCameraId(e.target.value)}
-          >
-            {cameras.map(camera => (
-              <option key={camera.id} value={camera.id}>
-                {camera.label}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-      )}
-      <div id="reader" ref={videoRef} style={{ width: '100%' }}></div>
-    </div>
-  );
+  return <div id="reader" ref={videoRef} style={{ width: '100%' }}></div>;
 };
 
 export default BarcodeScanner;
