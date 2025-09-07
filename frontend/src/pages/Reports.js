@@ -1,44 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Form, Button, Row, Col, Spinner, Card } from 'react-bootstrap';
+import { Container, Form, Button, Row, Col, Spinner, Card, Tabs, Tab, Table, Alert } from 'react-bootstrap';
 import api from '../api';
 
 function Reports() {
-  const [filters, setFilters] = useState({
+  // State for Delivery Report
+  const [deliveryFilters, setDeliveryFilters] = useState({
     stage: '',
     grade: '',
     section: '',
     deliveryDateFrom: '',
     deliveryDateTo: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [stageOptions, setStageOptions] = useState([]);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
 
-  // useEffect لجلب المراحل الدراسية ديناميكيًا
+  // State for Inventory Report
+  const [inventoryFilters, setInventoryFilters] = useState({
+    stage: '',
+    type: '',
+    size: '',
+    entryDateFrom: '',
+    entryDateTo: ''
+  });
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [summaryData, setSummaryData] = useState([]);
+  const [detailsData, setDetailsData] = useState([]);
+  
+  // Dynamic options for filters
+  const [stageOptions, setStageOptions] = useState([]);
+  const [typeOptions, setTypeOptions] = useState([]);
+  const [sizeOptions, setSizeOptions] = useState([]);
+
+  // Fetch dynamic options for filters on component mount
   useEffect(() => {
-    const fetchStageOptions = async () => {
+    const fetchFilterOptions = async () => {
         try {
-            const response = await api.post('/api/reports/inventory-details', {});
-            const data = response.data;
-            const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))].sort();
-            setStageOptions(uniqueStages);
+            const response = await api.get('/api/uniforms/options'); // Assuming you have an endpoint to get unique uniform options
+            const { stages, types, sizes } = response.data;
+            setStageOptions(stages.sort());
+            setTypeOptions(types.sort());
+            setSizeOptions(sizes.sort((a, b) => a - b));
         } catch (error) {
-            console.error('Failed to fetch stage options:', error);
+            console.error('Failed to fetch filter options:', error);
         }
     };
-    fetchStageOptions();
+    fetchFilterOptions();
   }, []);
 
-  const handleInputChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+  // --- Delivery Report Handlers ---
+  const handleDeliveryInputChange = (e) => {
+    setDeliveryFilters({ ...deliveryFilters, [e.target.name]: e.target.value });
   };
 
-  const handleExport = async () => {
-    setLoading(true);
+  const handleDeliveryExport = async () => {
+    setDeliveryLoading(true);
     try {
-      const response = await api.post('/api/reports/export',
-        { ...filters, exportType: 'excel' },
-        { responseType: 'blob' }
-      );
+      const response = await api.post('/api/reports/delivery-export', deliveryFilters, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -47,81 +63,130 @@ function Reports() {
       link.click();
       link.remove();
     } catch (error) {
-      console.error('Failed to export report:', error);
-      alert('حدث خطأ أثناء تصدير التقرير.');
+      console.error('Failed to export delivery report:', error);
+      alert('حدث خطأ أثناء تصدير تقرير التسليم.');
     } finally {
-      setLoading(false);
+      setDeliveryLoading(false);
+    }
+  };
+
+  // --- Inventory Report Handlers ---
+  const handleInventoryInputChange = (e) => {
+    setInventoryFilters({ ...inventoryFilters, [e.target.name]: e.target.value });
+  };
+
+  const fetchInventorySummary = async () => {
+    setInventoryLoading(true);
+    setDetailsData([]); // Clear details when fetching summary
+    try {
+        const response = await api.post('/api/reports/inventory-summary', inventoryFilters);
+        setSummaryData(response.data);
+    } catch (error) {
+        console.error('Failed to fetch inventory summary:', error);
+        alert('حدث خطأ أثناء جلب ملخص المخزون.');
+    } finally {
+        setInventoryLoading(false);
+    }
+  };
+
+  const fetchInventoryDetails = async () => {
+    setInventoryLoading(true);
+    setSummaryData([]); // Clear summary when fetching details
+    try {
+        const response = await api.post('/api/reports/inventory-details', inventoryFilters);
+        setDetailsData(response.data);
+    } catch (error) {
+        console.error('Failed to fetch inventory details:', error);
+        alert('حدث خطأ أثناء جلب تفاصيل المخزون.');
+    } finally {
+        setInventoryLoading(false);
+    }
+  };
+  
+  const exportInventoryDetails = async () => {
+    setInventoryLoading(true);
+    try {
+        const response = await api.post('/api/reports/inventory-export', inventoryFilters, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'inventory_details_report.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    } catch (error) {
+        console.error('Failed to export inventory details:', error);
+        alert('حدث خطأ أثناء تصدير تفاصيل المخزون.');
+    } finally {
+        setInventoryLoading(false);
     }
   };
 
   return (
     <Container className="mt-4">
-      <Card className="p-4 shadow-sm">
-        <Card.Title as="h2" className="text-center mb-4">إنشاء تقرير التسليم</Card.Title>
-        <Form>
-          <Row className="mb-3 align-items-end">
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label>المرحلة الدراسية</Form.Label>
-                <Form.Control as="select" name="stage" onChange={handleInputChange}>
-                  <option value="">الكل</option>
-                  {stageOptions.map(stage => (
-                    <option key={stage} value={stage}>{stage}</option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label>الصف</Form.Label>
-                <Form.Control as="select" name="grade" onChange={handleInputChange}>
-                    <option value="">الكل</option>
-                    <option value="الأول">الأول</option>
-                    <option value="الثاني">الثاني</option>
-                    <option value="الثالث">الثالث</option>
-                    <option value="الرابع">الرابع</option>
-                    <option value="الخامس">الخامس</option>
-                    <option value="السادس">السادس</option>
-                </Form.Control>
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label>الشعبة</Form.Label>
-                <Form.Control as="select" name="section" onChange={handleInputChange}>
-                    <option value="">الكل</option>
-                    <option value="أ">أ</option>
-                    <option value="ب">ب</option>
-                    <option value="ج">ج</option>
-                    <option value="د">د</option>
-                    <option value="هـ">هـ</option>
-                </Form.Control>
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Row>
-                  <Col sm={6}>
-                      <Form.Group>
-                          <Form.Label>من تاريخ</Form.Label>
-                          <Form.Control type="date" name="deliveryDateFrom" onChange={handleInputChange} />
-                      </Form.Group>
-                  </Col>
-                  <Col sm={6}>
-                      <Form.Group>
-                          <Form.Label>إلى تاريخ</Form.Label>
-                          <Form.Control type="date" name="deliveryDateTo" onChange={handleInputChange} />
-                      </Form.Group>
-                  </Col>
+      <Tabs defaultActiveKey="delivery" id="reports-tabs" className="mb-3">
+        {/* Delivery Report Tab */}
+        <Tab eventKey="delivery" title="تقرير التسليم">
+          <Card className="p-4 shadow-sm">
+            <Card.Title as="h3" className="text-center mb-4">إنشاء تقرير التسليم</Card.Title>
+            <Form>
+              <Row className="mb-3 align-items-end">
+                <Col md={3}><Form.Group><Form.Label>المرحلة الدراسية</Form.Label><Form.Control as="select" name="stage" onChange={handleDeliveryInputChange}><option value="">الكل</option>{stageOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={2}><Form.Group><Form.Label>الصف</Form.Label><Form.Control as="select" name="grade" onChange={handleDeliveryInputChange}><option value="">الكل</option>{['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس'].map(g=><option key={g} value={g}>{g}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={2}><Form.Group><Form.Label>الشعبة</Form.Label><Form.Control as="select" name="section" onChange={handleDeliveryInputChange}><option value="">الكل</option>{['أ', 'ب', 'ج', 'د', 'هـ'].map(s=><option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={5}><Form.Group><Form.Label>تاريخ التسليم</Form.Label><Row><Col><Form.Control type="date" name="deliveryDateFrom" onChange={handleDeliveryInputChange} /></Col><Col><Form.Control type="date" name="deliveryDateTo" onChange={handleDeliveryInputChange} /></Col></Row></Form.Group></Col>
               </Row>
-            </Col>
-          </Row>
-          <div className="d-grid mt-4">
-              <Button variant="success" size="lg" onClick={handleExport} disabled={loading}>
-                {loading ? <Spinner as="span" size="sm" /> : 'تصدير إلى Excel'}
-              </Button>
-          </div>
-        </Form>
-      </Card>
+              <div className="d-grid mt-4"><Button variant="success" size="lg" onClick={handleDeliveryExport} disabled={deliveryLoading}>{deliveryLoading ? <Spinner as="span" size="sm" /> : 'تصدير تقرير التسليم إلى Excel'}</Button></div>
+            </Form>
+          </Card>
+        </Tab>
+
+        {/* Inventory Report Tab */}
+        <Tab eventKey="inventory" title="تقرير المخزون">
+          <Card className="p-4 shadow-sm">
+            <Card.Title as="h3" className="text-center mb-4">إنشاء تقرير المخزون</Card.Title>
+            <Form>
+              <Row className="mb-3 align-items-end">
+                <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Control as="select" name="stage" onChange={handleInventoryInputChange}><option value="">الكل</option>{stageOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={2}><Form.Group><Form.Label>النوع</Form.Label><Form.Control as="select" name="type" onChange={handleInventoryInputChange}><option value="">الكل</option>{typeOptions.map(t => <option key={t} value={t}>{t}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={2}><Form.Group><Form.Label>المقاس</Form.Label><Form.Control as="select" name="size" onChange={handleInventoryInputChange}><option value="">الكل</option>{sizeOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={5}><Form.Group><Form.Label>تاريخ الإدخال</Form.Label><Row><Col><Form.Control type="date" name="entryDateFrom" onChange={handleInventoryInputChange} /></Col><Col><Form.Control type="date" name="entryDateTo" onChange={handleInventoryInputChange} /></Col></Row></Form.Group></Col>
+              </Row>
+              <Row className="mt-4">
+                <Col md={4}><div className="d-grid"><Button variant="primary" onClick={fetchInventorySummary} disabled={inventoryLoading}>عرض الملخص</Button></div></Col>
+                <Col md={4}><div className="d-grid"><Button variant="info" onClick={fetchInventoryDetails} disabled={inventoryLoading}>عرض التفصيلي</Button></div></Col>
+                <Col md={4}><div className="d-grid"><Button variant="success" onClick={exportInventoryDetails} disabled={inventoryLoading}>تصدير التفصيلي لـ Excel</Button></div></Col>
+              </Row>
+            </Form>
+            
+            <div className="mt-4">
+                {inventoryLoading && <div className="text-center"><Spinner animation="border" /></div>}
+                
+                {summaryData.length > 0 && (
+                    <>
+                        <h4>ملخص المخزون الحالي</h4>
+                        <Table striped bordered hover responsive>
+                            <thead><tr><th>المرحلة</th><th>النوع</th><th>المقاس</th><th>الكمية المتوفرة</th></tr></thead>
+                            <tbody>{summaryData.map((item, index) => <tr key={index}><td>{item._id.stage}</td><td>{item._id.type}</td><td>{item._id.size}</td><td>{item.quantity}</td></tr>)}</tbody>
+                        </Table>
+                    </>
+                )}
+
+                {detailsData.length > 0 && (
+                     <>
+                        <h4>تفاصيل المخزون الحالي</h4>
+                        <Table striped bordered hover responsive>
+                            <thead><tr><th>الباركود</th><th>المرحلة</th><th>النوع</th><th>المقاس</th><th>تاريخ الإدخال</th></tr></thead>
+                            <tbody>{detailsData.map(item => <tr key={item._id}><td>{item.barcode}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td><td>{new Date(item.entryDate).toLocaleDateString('ar-SA')}</td></tr>)}</tbody>
+                        </Table>
+                    </>
+                )}
+
+                {!inventoryLoading && summaryData.length === 0 && detailsData.length === 0 && <Alert variant="light" className="text-center">الرجاء تحديد الفلاتر والضغط على أحد الأزرار لعرض التقارير.</Alert>}
+            </div>
+          </Card>
+        </Tab>
+      </Tabs>
     </Container>
   );
 }
