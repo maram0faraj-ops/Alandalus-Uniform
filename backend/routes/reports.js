@@ -24,24 +24,33 @@ const buildDateQuery = (from, to) => {
 // --- Delivery Report Route ---
 router.post('/delivery-export', async (req, res) => {
     try {
-        const { stage, grade, section, deliveryDateFrom, deliveryDateTo } = req.body;
-        const query = {};
-
-        if (stage) query.stage = stage;
-        if (grade) query.grade = grade;
-        if (section) query.section = section;
+        const { stage, grade, section, paymentType, deliveryDateFrom, deliveryDateTo } = req.body;
+        
+        const matchStage = {};
         const dateQuery = buildDateQuery(deliveryDateFrom, deliveryDateTo);
-        if (dateQuery) query.deliveryDate = dateQuery;
+        if (dateQuery) matchStage.deliveryDate = dateQuery;
 
-        const deliveries = await Delivery.find(query)
-            .populate({ path: 'inventoryItem', populate: { path: 'uniform' } })
-            .populate('deliveredBy', 'name');
+        if (grade) matchStage.grade = grade;
+        if (section) matchStage.section = section;
+        if (paymentType) matchStage.paymentType = paymentType;
+
+        let deliveries = await Delivery.aggregate([
+            { $match: matchStage },
+            { $lookup: { from: 'inventories', localField: 'inventoryItem', foreignField: '_id', as: 'inventoryItem' }},
+            { $unwind: '$inventoryItem' },
+            { $lookup: { from: 'uniforms', localField: 'inventoryItem.uniform', foreignField: '_id', as: 'uniformDetails' }},
+            { $unwind: '$uniformDetails' },
+            { $lookup: { from: 'users', localField: 'deliveredBy', foreignField: '_id', as: 'deliveredBy' }},
+            { $unwind: '$deliveredBy' },
+            // الفلترة حسب المرحلة بعد عمل الربط
+            ...(stage ? [{ $match: { 'uniformDetails.stage': stage } }] : []),
+        ]);
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Delivery Report');
         worksheet.columns = [
             { header: 'اسم الطالب', key: 'studentName', width: 25 },
-            { header: 'المرحلة', key: 'stage', width: 15 },
+            { header: 'المرحلة', key: 'stage', width: 20 },
             { header: 'الصف', key: 'grade', width: 10 },
             { header: 'الشعبة', key: 'section', width: 10 },
             { header: 'نوع الزي', key: 'uniformType', width: 15 },
@@ -54,14 +63,14 @@ router.post('/delivery-export', async (req, res) => {
         deliveries.forEach(d => {
             worksheet.addRow({
                 studentName: d.studentName,
-                stage: d.stage,
+                stage: d.uniformDetails.stage,
                 grade: d.grade,
                 section: d.section,
-                uniformType: d.inventoryItem?.uniform?.type,
-                uniformSize: d.inventoryItem?.uniform?.size,
-                barcode: d.inventoryItem?.barcode,
+                uniformType: d.uniformDetails.type,
+                uniformSize: d.uniformDetails.size,
+                barcode: d.inventoryItem.barcode,
                 paymentType: d.paymentType,
-                deliveredBy: d.deliveredBy?.name,
+                deliveredBy: d.deliveredBy.name,
                 deliveryDate: d.deliveryDate,
             });
         });

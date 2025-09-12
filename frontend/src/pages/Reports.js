@@ -8,6 +8,7 @@ function Reports() {
     stage: '',
     grade: '',
     section: '',
+    paymentType: '', // حقل جديد
     deliveryDateFrom: '',
     deliveryDateTo: ''
   });
@@ -34,7 +35,6 @@ function Reports() {
   useEffect(() => {
     const fetchFilterOptions = async () => {
         try {
-            // استدعاء المسار الصحيح لجلب خيارات الفلاتر
             const response = await api.get('/api/uniforms/options');
             const { stages, types, sizes } = response.data;
             setStageOptions(stages.sort());
@@ -132,10 +132,30 @@ function Reports() {
             <Card.Title as="h3" className="text-center mb-4">إنشاء تقرير التسليم</Card.Title>
             <Form>
               <Row className="mb-3 align-items-end">
-                <Col md={3}><Form.Group><Form.Label>المرحلة الدراسية</Form.Label><Form.Control as="select" name="stage" onChange={handleDeliveryInputChange}><option value="">الكل</option>{stageOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
+                <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Control as="select" name="stage" onChange={handleDeliveryInputChange}><option value="">الكل</option>{stageOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
                 <Col md={2}><Form.Group><Form.Label>الصف</Form.Label><Form.Control as="select" name="grade" onChange={handleDeliveryInputChange}><option value="">الكل</option>{['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس'].map(g=><option key={g} value={g}>{g}</option>)}</Form.Control></Form.Group></Col>
                 <Col md={2}><Form.Group><Form.Label>الشعبة</Form.Label><Form.Control as="select" name="section" onChange={handleDeliveryInputChange}><option value="">الكل</option>{['أ', 'ب', 'ج', 'د', 'هـ'].map(s=><option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={5}><Form.Group><Form.Label>تاريخ التسليم</Form.Label><Row><Col><Form.Control type="date" name="deliveryDateFrom" onChange={handleDeliveryInputChange} /></Col><Col><Form.Control type="date" name="deliveryDateTo" onChange={handleDeliveryInputChange} /></Col></Row></Form.Group></Col>
+                
+                <Col md={2}>
+                  <Form.Group>
+                    <Form.Label>نوع الدفع</Form.Label>
+                    <Form.Control as="select" name="paymentType" onChange={handleDeliveryInputChange}>
+                        <option value="">الكل</option>
+                        <option value="مدفوع">مدفوع</option>
+                        <option value="مجاني">مجاني</option>
+                    </Form.Control>
+                  </Form.Group>
+                </Col>
+
+                <Col md={3}>
+                  <Form.Group>
+                    <Form.Label>تاريخ التسليم</Form.Label>
+                    <Row>
+                      <Col><Form.Control type="date" name="deliveryDateFrom" onChange={handleDeliveryInputChange} /></Col>
+                      <Col><Form.Control type="date" name="deliveryDateTo" onChange={handleDeliveryInputChange} /></Col>
+                    </Row>
+                  </Form.Group>
+                </Col>
               </Row>
               <div className="d-grid mt-4"><Button variant="success" size="lg" onClick={handleDeliveryExport} disabled={deliveryLoading}>{deliveryLoading ? <Spinner as="span" size="sm" /> : 'تصدير تقرير التسليم إلى Excel'}</Button></div>
             </Form>
