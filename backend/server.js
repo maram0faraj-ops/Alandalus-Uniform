@@ -40,6 +40,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const deliveryRoutes = require('./routes/delivery');
 const notificationRoutes = require('./routes/notifications'); // --- جديد ---
 const reportRoutes = require('./routes/reports'); // --- جديد ---
+const uniformsRoutes = require('./routes/uniforms');
 
 
 // Mount route handlers to specific API paths
@@ -49,7 +50,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/notifications', notificationRoutes); // --- جديد ---
 app.use('/api/reports', reportRoutes); // --- جديد ---
-
+app.use('/api/uniforms', uniformsRoutes);
 
 // --- جديد ---: المهمة المجدولة لفحص المخزون المنخفض
 // سيتم تشغيل هذا الكود كل يوم الساعة 8 صباحاً بتوقيت السيرفر

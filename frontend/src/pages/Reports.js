@@ -34,7 +34,8 @@ function Reports() {
   useEffect(() => {
     const fetchFilterOptions = async () => {
         try {
-            const response = await api.get('/api/uniforms/options'); // Assuming you have an endpoint to get unique uniform options
+            // استدعاء المسار الصحيح لجلب خيارات الفلاتر
+            const response = await api.get('/api/uniforms/options');
             const { stages, types, sizes } = response.data;
             setStageOptions(stages.sort());
             setTypeOptions(types.sort());
@@ -77,7 +78,7 @@ function Reports() {
 
   const fetchInventorySummary = async () => {
     setInventoryLoading(true);
-    setDetailsData([]); // Clear details when fetching summary
+    setDetailsData([]);
     try {
         const response = await api.post('/api/reports/inventory-summary', inventoryFilters);
         setSummaryData(response.data);
@@ -91,7 +92,7 @@ function Reports() {
 
   const fetchInventoryDetails = async () => {
     setInventoryLoading(true);
-    setSummaryData([]); // Clear summary when fetching details
+    setSummaryData([]);
     try {
         const response = await api.post('/api/reports/inventory-details', inventoryFilters);
         setDetailsData(response.data);
