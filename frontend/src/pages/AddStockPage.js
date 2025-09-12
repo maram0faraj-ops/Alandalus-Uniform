@@ -13,7 +13,7 @@ function AddStockPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const stages = ['رياض أطفال بنات', 'رياض أطفال بنين', ' ابتدائي بنات', ' ابتدائي بنين', 'متوسط', 'ثانوي'];
+    const stages = ['رياض أطفال بنات', 'رياض أطفال بنين', 'ابتدائي بنات', 'ابتدائي بنين', 'متوسط', 'ثانوي'];
     const types = ['رسمي', 'رياضي', 'جاكيت'];
     const sizes = Array.from({ length: (60 - 10) + 1 }, (_, i) => 10 + i); // <-- تم التعديل هنا
 

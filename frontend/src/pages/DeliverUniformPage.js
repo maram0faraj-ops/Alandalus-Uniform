@@ -152,7 +152,7 @@ function DeliverUniformPage() {
                           <Form.Group className="mb-3">
                             <Form.Label>المرحلة</Form.Label>
                             <Form.Select name="stage" value={studentData.stage} onChange={handleStudentDataChange}>
-                              {['رياض أطفال بنات', 'رياض أطفال بنين', 'ابتدائي بنات', '  ابتدائي بنين ', 'متوسط', 'ثانوي'].map(s => <option key={s} value={s}>{s}</option>)}
+                             {['رياض أطفال بنات', 'رياض أطفال بنين', 'ابتدائي بنات', 'ابتدائي بنين', 'متوسط', 'ثانوي'].map(s => <option key={s} value={s}>{s}</option>)}
                             </Form.Select>
                           </Form.Group>
                         </Col>
