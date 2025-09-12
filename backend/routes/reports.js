@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Delivery = require('../models/Delivery');
 const Inventory = require('../models/Inventory');
-const Uniform = require('../models/Uniform'); // Make sure to import Uniform model
+const Uniform = require('../models/Uniform');
 const ExcelJS = require('exceljs');
 
 // Helper function to build date queries
@@ -18,7 +18,7 @@ const buildDateQuery = (from, to) => {
         endDate.setUTCHours(23, 59, 59, 999);
         dateQuery.$lte = endDate;
     }
-    return dateQuery;
+    return Object.keys(dateQuery).length > 0 ? dateQuery : null;
 };
 
 // --- Delivery Report Route ---
@@ -30,9 +30,8 @@ router.post('/delivery-export', async (req, res) => {
         if (stage) query.stage = stage;
         if (grade) query.grade = grade;
         if (section) query.section = section;
-        if (deliveryDateFrom || deliveryDateTo) {
-            query.deliveryDate = buildDateQuery(deliveryDateFrom, deliveryDateTo);
-        }
+        const dateQuery = buildDateQuery(deliveryDateFrom, deliveryDateTo);
+        if (dateQuery) query.deliveryDate = dateQuery;
 
         const deliveries = await Delivery.find(query)
             .populate({ path: 'inventoryItem', populate: { path: 'uniform' } })
@@ -69,7 +68,6 @@ router.post('/delivery-export', async (req, res) => {
         res.setHeader('Content-Disposition', 'attachment; filename="delivery_report.xlsx"');
         await workbook.xlsx.write(res);
         res.end();
-
     } catch (error) {
         console.error("Delivery Report Export Error:", error);
         res.status(500).json({ message: 'فشل في إنشاء تقرير التسليم.' });
@@ -78,25 +76,25 @@ router.post('/delivery-export', async (req, res) => {
 
 // --- Inventory Report Routes ---
 const buildInventoryQuery = async (filters) => {
-    const { stage, type, size, entryDateFrom, entryDateTo } = filters;
+    const { stage, type, size, paymentType, entryDateFrom, entryDateTo } = filters;
     
-    // Find uniform IDs that match the criteria
     const uniformQuery = {};
     if (stage) uniformQuery.stage = stage;
     if (type) uniformQuery.type = type;
     if (size) uniformQuery.size = size;
+    // إضافة فلتر نوع الدفع
+    if (paymentType) uniformQuery.paymentType = paymentType;
 
     const uniformIds = await Uniform.find(uniformQuery).select('_id');
     const uniformIdArray = uniformIds.map(u => u._id);
 
-    // Build the final inventory query
     const inventoryQuery = { status: 'in_stock' };
-    if (stage || type || size) {
+    if (Object.keys(uniformQuery).length > 0) {
         inventoryQuery.uniform = { $in: uniformIdArray };
     }
-    if (entryDateFrom || entryDateTo) {
-        inventoryQuery.entryDate = buildDateQuery(entryDateFrom, entryDateTo);
-    }
+    const dateQuery = buildDateQuery(entryDateFrom, entryDateTo);
+    if (dateQuery) inventoryQuery.entryDate = dateQuery;
+    
     return inventoryQuery;
 };
 
@@ -108,8 +106,9 @@ router.post('/inventory-summary', async (req, res) => {
             { $match: inventoryQuery },
             { $lookup: { from: 'uniforms', localField: 'uniform', foreignField: '_id', as: 'uniformDetails' }},
             { $unwind: '$uniformDetails' },
-            { $group: { _id: { stage: '$uniformDetails.stage', type: '$uniformDetails.type', size: '$uniformDetails.size' }, quantity: { $sum: 1 }}},
-            { $sort: { '_id.stage': 1, '_id.type': 1, '_id.size': 1 } }
+            // إضافة نوع الدفع إلى التجميع
+            { $group: { _id: { stage: '$uniformDetails.stage', type: '$uniformDetails.type', size: '$uniformDetails.size', paymentType: '$uniformDetails.paymentType' }, quantity: { $sum: 1 }}},
+            { $sort: { '_id.stage': 1, '_id.type': 1, '_id.size': 1, '_id.paymentType': 1 } }
         ]);
 
         res.json(summary);
@@ -142,6 +141,7 @@ router.post('/inventory-export', async (req, res) => {
             { header: 'المرحلة', key: 'stage', width: 15 },
             { header: 'النوع', key: 'type', width: 15 },
             { header: 'المقاس', key: 'size', width: 10 },
+            // إضافة عمود نوع الدفع
             { header: 'نوع الدفع', key: 'paymentType', width: 15 },
             { header: 'تاريخ الإدخال', key: 'entryDate', width: 22, style: { numFmt: 'yyyy-mm-dd hh:mm:ss' } },
         ];
@@ -151,7 +151,8 @@ router.post('/inventory-export', async (req, res) => {
                 stage: item.uniform?.stage,
                 type: item.uniform?.type,
                 size: item.uniform?.size,
-                paymentType: item.uniform?.paymentType,
+                // إضافة بيانات نوع الدفع
+                paymentType: item.uniform?.paymentType === 'paid' ? 'مدفوع' : 'مجاني',
                 entryDate: item.entryDate,
             });
         });

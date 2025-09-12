@@ -1,194 +1,173 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Form, Button, Row, Col, Spinner, Card, Tabs, Tab, Table, Alert } from 'react-bootstrap';
-import api from '../api';
+const express = require('express');
+const router = express.Router();
+const Delivery = require('../models/Delivery');
+const Inventory = require('../models/Inventory');
+const Uniform = require('../models/Uniform');
+const ExcelJS = require('exceljs');
 
-function Reports() {
-  // State for Delivery Report
-  const [deliveryFilters, setDeliveryFilters] = useState({
-    stage: '',
-    grade: '',
-    section: '',
-    deliveryDateFrom: '',
-    deliveryDateTo: ''
-  });
-  const [deliveryLoading, setDeliveryLoading] = useState(false);
-
-  // State for Inventory Report
-  const [inventoryFilters, setInventoryFilters] = useState({
-    stage: '',
-    type: '',
-    size: '',
-    entryDateFrom: '',
-    entryDateTo: ''
-  });
-  const [inventoryLoading, setInventoryLoading] = useState(false);
-  const [summaryData, setSummaryData] = useState([]);
-  const [detailsData, setDetailsData] = useState([]);
-  
-  // Dynamic options for filters
-  const [stageOptions, setStageOptions] = useState([]);
-  const [typeOptions, setTypeOptions] = useState([]);
-  const [sizeOptions, setSizeOptions] = useState([]);
-
-  // Fetch dynamic options for filters on component mount
-  useEffect(() => {
-    const fetchFilterOptions = async () => {
-        try {
-            const response = await api.get('/api/uniforms/options'); // Assuming you have an endpoint to get unique uniform options
-            const { stages, types, sizes } = response.data;
-            setStageOptions(stages.sort());
-            setTypeOptions(types.sort());
-            setSizeOptions(sizes.sort((a, b) => a - b));
-        } catch (error) {
-            console.error('Failed to fetch filter options:', error);
-        }
-    };
-    fetchFilterOptions();
-  }, []);
-
-  // --- Delivery Report Handlers ---
-  const handleDeliveryInputChange = (e) => {
-    setDeliveryFilters({ ...deliveryFilters, [e.target.name]: e.target.value });
-  };
-
-  const handleDeliveryExport = async () => {
-    setDeliveryLoading(true);
-    try {
-      const response = await api.post('/api/reports/delivery-export', deliveryFilters, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'delivery_report.xlsx');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('Failed to export delivery report:', error);
-      alert('حدث خطأ أثناء تصدير تقرير التسليم.');
-    } finally {
-      setDeliveryLoading(false);
+// Helper function to build date queries
+const buildDateQuery = (from, to) => {
+    const dateQuery = {};
+    if (from) {
+        const startDate = new Date(from);
+        startDate.setUTCHours(0, 0, 0, 0);
+        dateQuery.$gte = startDate;
     }
-  };
-
-  // --- Inventory Report Handlers ---
-  const handleInventoryInputChange = (e) => {
-    setInventoryFilters({ ...inventoryFilters, [e.target.name]: e.target.value });
-  };
-
-  const fetchInventorySummary = async () => {
-    setInventoryLoading(true);
-    setDetailsData([]); // Clear details when fetching summary
-    try {
-        const response = await api.post('/api/reports/inventory-summary', inventoryFilters);
-        setSummaryData(response.data);
-    } catch (error) {
-        console.error('Failed to fetch inventory summary:', error);
-        alert('حدث خطأ أثناء جلب ملخص المخزون.');
-    } finally {
-        setInventoryLoading(false);
+    if (to) {
+        const endDate = new Date(to);
+        endDate.setUTCHours(23, 59, 59, 999);
+        dateQuery.$lte = endDate;
     }
-  };
+    return Object.keys(dateQuery).length > 0 ? dateQuery : null;
+};
 
-  const fetchInventoryDetails = async () => {
-    setInventoryLoading(true);
-    setSummaryData([]); // Clear summary when fetching details
+// --- Delivery Report Route ---
+router.post('/delivery-export', async (req, res) => {
     try {
-        const response = await api.post('/api/reports/inventory-details', inventoryFilters);
-        setDetailsData(response.data);
+        const { stage, grade, section, deliveryDateFrom, deliveryDateTo } = req.body;
+        const query = {};
+
+        if (stage) query.stage = stage;
+        if (grade) query.grade = grade;
+        if (section) query.section = section;
+        const dateQuery = buildDateQuery(deliveryDateFrom, deliveryDateTo);
+        if (dateQuery) query.deliveryDate = dateQuery;
+
+        const deliveries = await Delivery.find(query)
+            .populate({ path: 'inventoryItem', populate: { path: 'uniform' } })
+            .populate('deliveredBy', 'name');
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Delivery Report');
+        worksheet.columns = [
+            { header: 'اسم الطالب', key: 'studentName', width: 25 },
+            { header: 'المرحلة', key: 'stage', width: 15 },
+            { header: 'الصف', key: 'grade', width: 10 },
+            { header: 'الشعبة', key: 'section', width: 10 },
+            { header: 'نوع الزي', key: 'uniformType', width: 15 },
+            { header: 'المقاس', key: 'uniformSize', width: 10 },
+            { header: 'الباركود', key: 'barcode', width: 30 },
+            { header: 'نوع الدفع', key: 'paymentType', width: 15 }, // <-- تم إضافة هذا السطر
+            { header: 'تم التسليم بواسطة', key: 'deliveredBy', width: 20 },
+            { header: 'تاريخ التسليم', key: 'deliveryDate', width: 22, style: { numFmt: 'yyyy-mm-dd hh:mm:ss' } },
+        ];
+        deliveries.forEach(d => {
+            worksheet.addRow({
+                studentName: d.studentName,
+                stage: d.stage,
+                grade: d.grade,
+                section: d.section,
+                uniformType: d.inventoryItem?.uniform?.type,
+                uniformSize: d.inventoryItem?.uniform?.size,
+                barcode: d.inventoryItem?.barcode,
+                paymentType: d.paymentType, // <-- تم إضافة هذا السطر
+                deliveredBy: d.deliveredBy?.name,
+                deliveryDate: d.deliveryDate,
+            });
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="delivery_report.xlsx"');
+        await workbook.xlsx.write(res);
+        res.end();
     } catch (error) {
-        console.error('Failed to fetch inventory details:', error);
-        alert('حدث خطأ أثناء جلب تفاصيل المخزون.');
-    } finally {
-        setInventoryLoading(false);
+        console.error("Delivery Report Export Error:", error);
+        res.status(500).json({ message: 'فشل في إنشاء تقرير التسليم.' });
     }
-  };
-  
-  const exportInventoryDetails = async () => {
-    setInventoryLoading(true);
+});
+
+// --- Inventory Report Routes ---
+const buildInventoryQuery = async (filters) => {
+    const { stage, type, size, paymentType, entryDateFrom, entryDateTo } = filters;
+    
+    const uniformQuery = {};
+    if (stage) uniformQuery.stage = stage;
+    if (type) uniformQuery.type = type;
+    if (size) uniformQuery.size = size;
+    // إضافة فلتر نوع الدفع
+    if (paymentType) uniformQuery.paymentType = paymentType;
+
+    const uniformIds = await Uniform.find(uniformQuery).select('_id');
+    const uniformIdArray = uniformIds.map(u => u._id);
+
+    const inventoryQuery = { status: 'in_stock' };
+    if (Object.keys(uniformQuery).length > 0) {
+        inventoryQuery.uniform = { $in: uniformIdArray };
+    }
+    const dateQuery = buildDateQuery(entryDateFrom, entryDateTo);
+    if (dateQuery) inventoryQuery.entryDate = dateQuery;
+    
+    return inventoryQuery;
+};
+
+router.post('/inventory-summary', async (req, res) => {
     try {
-        const response = await api.post('/api/reports/inventory-export', inventoryFilters, { responseType: 'blob' });
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'inventory_details_report.xlsx');
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        const inventoryQuery = await buildInventoryQuery(req.body);
+        
+        const summary = await Inventory.aggregate([
+            { $match: inventoryQuery },
+            { $lookup: { from: 'uniforms', localField: 'uniform', foreignField: '_id', as: 'uniformDetails' }},
+            { $unwind: '$uniformDetails' },
+            // إضافة نوع الدفع إلى التجميع
+            { $group: { _id: { stage: '$uniformDetails.stage', type: '$uniformDetails.type', size: '$uniformDetails.size', paymentType: '$uniformDetails.paymentType' }, quantity: { $sum: 1 }}},
+            { $sort: { '_id.stage': 1, '_id.type': 1, '_id.size': 1, '_id.paymentType': 1 } }
+        ]);
+
+        res.json(summary);
     } catch (error) {
-        console.error('Failed to export inventory details:', error);
-        alert('حدث خطأ أثناء تصدير تفاصيل المخزون.');
-    } finally {
-        setInventoryLoading(false);
+        console.error("Inventory Summary Error:", error);
+        res.status(500).json({ message: 'فشل في إنشاء التقرير الملخص.' });
     }
-  };
+});
 
-  return (
-    <Container className="mt-4">
-      <Tabs defaultActiveKey="delivery" id="reports-tabs" className="mb-3">
-        {/* Delivery Report Tab */}
-        <Tab eventKey="delivery" title="تقرير التسليم">
-          <Card className="p-4 shadow-sm">
-            <Card.Title as="h3" className="text-center mb-4">إنشاء تقرير التسليم</Card.Title>
-            <Form>
-              <Row className="mb-3 align-items-end">
-                <Col md={3}><Form.Group><Form.Label>المرحلة الدراسية</Form.Label><Form.Control as="select" name="stage" onChange={handleDeliveryInputChange}><option value="">الكل</option>{stageOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={2}><Form.Group><Form.Label>الصف</Form.Label><Form.Control as="select" name="grade" onChange={handleDeliveryInputChange}><option value="">الكل</option>{['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس'].map(g=><option key={g} value={g}>{g}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={2}><Form.Group><Form.Label>الشعبة</Form.Label><Form.Control as="select" name="section" onChange={handleDeliveryInputChange}><option value="">الكل</option>{['أ', 'ب', 'ج', 'د', 'هـ'].map(s=><option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={5}><Form.Group><Form.Label>تاريخ التسليم</Form.Label><Row><Col><Form.Control type="date" name="deliveryDateFrom" onChange={handleDeliveryInputChange} /></Col><Col><Form.Control type="date" name="deliveryDateTo" onChange={handleDeliveryInputChange} /></Col></Row></Form.Group></Col>
-              </Row>
-              <div className="d-grid mt-4"><Button variant="success" size="lg" onClick={handleDeliveryExport} disabled={deliveryLoading}>{deliveryLoading ? <Spinner as="span" size="sm" /> : 'تصدير تقرير التسليم إلى Excel'}</Button></div>
-            </Form>
-          </Card>
-        </Tab>
+router.post('/inventory-details', async (req, res) => {
+    try {
+        const inventoryQuery = await buildInventoryQuery(req.body);
+        const items = await Inventory.find(inventoryQuery).populate('uniform').sort({ entryDate: -1 });
+        res.json(items);
+    } catch (error) {
+        console.error("Inventory Details Error:", error);
+        res.status(500).json({ message: 'فشل في إنشاء التقرير المفصل.' });
+    }
+});
 
-        {/* Inventory Report Tab */}
-        <Tab eventKey="inventory" title="تقرير المخزون">
-          <Card className="p-4 shadow-sm">
-            <Card.Title as="h3" className="text-center mb-4">إنشاء تقرير المخزون</Card.Title>
-            <Form>
-              <Row className="mb-3 align-items-end">
-                <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Control as="select" name="stage" onChange={handleInventoryInputChange}><option value="">الكل</option>{stageOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={2}><Form.Group><Form.Label>النوع</Form.Label><Form.Control as="select" name="type" onChange={handleInventoryInputChange}><option value="">الكل</option>{typeOptions.map(t => <option key={t} value={t}>{t}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={2}><Form.Group><Form.Label>المقاس</Form.Label><Form.Control as="select" name="size" onChange={handleInventoryInputChange}><option value="">الكل</option>{sizeOptions.map(s => <option key={s} value={s}>{s}</option>)}</Form.Control></Form.Group></Col>
-                <Col md={5}><Form.Group><Form.Label>تاريخ الإدخال</Form.Label><Row><Col><Form.Control type="date" name="entryDateFrom" onChange={handleInventoryInputChange} /></Col><Col><Form.Control type="date" name="entryDateTo" onChange={handleInventoryInputChange} /></Col></Row></Form.Group></Col>
-              </Row>
-              <Row className="mt-4">
-                <Col md={4}><div className="d-grid"><Button variant="primary" onClick={fetchInventorySummary} disabled={inventoryLoading}>عرض الملخص</Button></div></Col>
-                <Col md={4}><div className="d-grid"><Button variant="info" onClick={fetchInventoryDetails} disabled={inventoryLoading}>عرض التفصيلي</Button></div></Col>
-                <Col md={4}><div className="d-grid"><Button variant="success" onClick={exportInventoryDetails} disabled={inventoryLoading}>تصدير التفصيلي لـ Excel</Button></div></Col>
-              </Row>
-            </Form>
-            
-            <div className="mt-4">
-                {inventoryLoading && <div className="text-center"><Spinner animation="border" /></div>}
-                
-                {summaryData.length > 0 && (
-                    <>
-                        <h4>ملخص المخزون الحالي</h4>
-                        <Table striped bordered hover responsive>
-                            <thead><tr><th>المرحلة</th><th>النوع</th><th>المقاس</th><th>الكمية المتوفرة</th></tr></thead>
-                            <tbody>{summaryData.map((item, index) => <tr key={index}><td>{item._id.stage}</td><td>{item._id.type}</td><td>{item._id.size}</td><td>{item.quantity}</td></tr>)}</tbody>
-                        </Table>
-                    </>
-                )}
+router.post('/inventory-export', async (req, res) => {
+    try {
+        const inventoryQuery = await buildInventoryQuery(req.body);
+        const items = await Inventory.find(inventoryQuery).populate('uniform').sort({ entryDate: -1 });
 
-                {detailsData.length > 0 && (
-                     <>
-                        <h4>تفاصيل المخزون الحالي</h4>
-                        <Table striped bordered hover responsive>
-                            <thead><tr><th>الباركود</th><th>المرحلة</th><th>النوع</th><th>المقاس</th><th>تاريخ الإدخال</th></tr></thead>
-                            <tbody>{detailsData.map(item => <tr key={item._id}><td>{item.barcode}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td><td>{new Date(item.entryDate).toLocaleDateString('ar-SA')}</td></tr>)}</tbody>
-                        </Table>
-                    </>
-                )}
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Inventory Details');
+        worksheet.columns = [
+            { header: 'الباركود', key: 'barcode', width: 30 },
+            { header: 'المرحلة', key: 'stage', width: 15 },
+            { header: 'النوع', key: 'type', width: 15 },
+            { header: 'المقاس', key: 'size', width: 10 },
+            // إضافة عمود نوع الدفع
+            { header: 'نوع الدفع', key: 'paymentType', width: 15 },
+            { header: 'تاريخ الإدخال', key: 'entryDate', width: 22, style: { numFmt: 'yyyy-mm-dd hh:mm:ss' } },
+        ];
+        items.forEach(item => {
+            worksheet.addRow({
+                barcode: item.barcode,
+                stage: item.uniform?.stage,
+                type: item.uniform?.type,
+                size: item.uniform?.size,
+                // إضافة بيانات نوع الدفع
+                paymentType: item.uniform?.paymentType === 'paid' ? 'مدفوع' : 'مجاني',
+                entryDate: item.entryDate,
+            });
+        });
 
-                {!inventoryLoading && summaryData.length === 0 && detailsData.length === 0 && <Alert variant="light" className="text-center">الرجاء تحديد الفلاتر والضغط على أحد الأزرار لعرض التقارير.</Alert>}
-            </div>
-          </Card>
-        </Tab>
-      </Tabs>
-    </Container>
-  );
-}
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="inventory_details_report.xlsx"');
+        await workbook.xlsx.write(res);
+        res.end();
 
-export default Reports;
+    } catch (error) {
+        console.error("Inventory Export Error:", error);
+        res.status(500).json({ message: 'فشل في تصدير تقرير المخزون.' });
+    }
+});
+ 
+module.exports = router;
