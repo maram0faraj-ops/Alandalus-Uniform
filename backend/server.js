@@ -20,7 +20,7 @@ const corsOptions = {
     origin: function (origin, callback) {
         // السماح بالوصول إذا كان الرابط في القائمة البيضاء،
         // أو إذا كان يطابق نمط روابط النشر المؤقتة من Vercel،
-        // أو إذا لم يكن هناك origin (مثل طلبات السيرفر الداخلية أو أدوات الاختبار)
+        // أو إذا لم يكن هناك origin (مثل أدوات الاختبار)
         if (!origin || allowedOrigins.indexOf(origin) !== -1 || /--maram-faraj-alshammris-projects\.vercel\.app$/.test(origin)) {
             callback(null, true);
         } else {
@@ -57,7 +57,10 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/uniforms', uniformsRoutes);
 
 // --- المهمة المجدولة (تبقى كما هي) ---
-cron.schedule('0 8 * * *', async () => { /* ... */ }, { timezone: "Asia/Riyadh" });
+cron.schedule('0 8 * * *', async () => { 
+    console.log('Running daily low stock check...');
+    // ... add cron job logic here if needed ...
+}, { timezone: "Asia/Riyadh" });
 
 // --- Start Server ---
 app.listen(PORT, () => {
