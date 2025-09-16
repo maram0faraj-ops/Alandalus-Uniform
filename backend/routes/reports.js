@@ -7,21 +7,21 @@ const ExcelJS = require('exceljs');
 const mongoose = require('mongoose'); // مهم لإجراء عمليات التحقق
 
 // Helper function to build date queries
+// Helper function to build date queries - UPDATED VERSION
 const buildDateQuery = (from, to, fieldName) => {
     const dateQuery = {};
     if (from) {
-        const startDate = new Date(from);
-        startDate.setUTCHours(0, 0, 0, 0);
-        dateQuery.$gte = startDate;
+        // Force parsing the date as UTC to avoid timezone shifts
+        dateQuery.$gte = new Date(`${from}T00:00:00.000Z`);
     }
     if (to) {
-        const endDate = new Date(to);
-        endDate.setUTCHours(23, 59, 59, 999);
-        dateQuery.$lte = endDate;
+        // Force parsing the date as UTC and set it to the end of the day
+        dateQuery.$lte = new Date(`${to}T23:59:59.999Z`);
     }
-    // Return null if no dates are provided to avoid an empty object in the query
+    // Return null if no dates are provided
     return Object.keys(dateQuery).length > 0 ? { [fieldName]: dateQuery } : null;
 };
+
 
 
 // --- Delivery Report Route (لا تغيير هنا) ---
