@@ -2,11 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Delivery = require('../models/Delivery');
 const Inventory = require('../models/Inventory');
-const Uniform = require('../models/Uniform'); // تأكد من استيراد هذا النموذج
+const Uniform = require('../models/Uniform');
 const ExcelJS = require('exceljs');
-const mongoose = require('mongoose'); // مهم لإجراء عمليات التحقق
 
-// Helper function to build date queries
 // Helper function to build date queries - UPDATED VERSION
 const buildDateQuery = (from, to, fieldName) => {
     const dateQuery = {};
@@ -22,9 +20,46 @@ const buildDateQuery = (from, to, fieldName) => {
     return Object.keys(dateQuery).length > 0 ? { [fieldName]: dateQuery } : null;
 };
 
+/**
+ * @desc    Builds a dynamic aggregation pipeline for inventory filtering.
+ * @param   {object} filters - The filter criteria from req.body.
+ * @returns {Array} - An array representing the MongoDB aggregation pipeline.
+ */
+const buildInventoryQuery = (filters) => {
+    const { stage, type, size, entryDateFrom, entryDateTo } = filters;
+    
+    // The pipeline now starts by filtering for 'in_stock' items ONLY.
+    const pipeline = [
+        { $match: { status: 'in_stock' } } // Filter for available items
+    ];
 
+    // 1. Add date filtering if dates are provided
+    const dateQuery = buildDateQuery(entryDateFrom, entryDateTo, 'entryDate');
+    if (dateQuery) {
+        // We push the date match into the existing $match stage for efficiency
+        Object.assign(pipeline[0].$match, dateQuery);
+    }
 
-// --- Delivery Report Route (لا تغيير هنا) ---
+    // 2. Lookup to join with the Uniform collection
+    pipeline.push(
+        { $lookup: { from: 'uniforms', localField: 'uniform', foreignField: '_id', as: 'uniform' } },
+        { $unwind: '$uniform' }
+    );
+
+    // 3. Secondary match for uniform properties (stage, type, size)
+    const uniformMatch = {};
+    if (stage) uniformMatch['uniform.stage'] = stage;
+    if (type) uniformMatch['uniform.type'] = type;
+    if (size) uniformMatch['uniform.size'] = Number(size); // Convert size to number
+
+    if (Object.keys(uniformMatch).length > 0) {
+        pipeline.push({ $match: uniformMatch });
+    }
+
+    return pipeline;
+};
+
+// --- Delivery Report Route ---
 router.post('/delivery-export', async (req, res) => {
     try {
         const { stage, grade, section, paymentType, deliveryDateFrom, deliveryDateTo } = req.body;
@@ -81,49 +116,13 @@ router.post('/delivery-export', async (req, res) => {
     }
 });
 
-
-// --- Inventory Report Routes (تمت إضافة المنطق المفقود هنا) ---
-
-/**
- * @desc    Builds a dynamic aggregation pipeline for inventory filtering.
- * @param   {object} filters - The filter criteria from req.body.
- * @returns {Array} - An array representing the MongoDB aggregation pipeline.
- */
-const buildInventoryQuery = (filters) => {
-    const { stage, type, size, entryDateFrom, entryDateTo } = filters;
-    const pipeline = [];
-
-    // 1. Initial match for entryDate on the Inventory collection
-    const dateQuery = buildDateQuery(entryDateFrom, entryDateTo, 'entryDate');
-    if (dateQuery) {
-        pipeline.push({ $match: dateQuery });
-    }
-
-    // 2. Lookup to join with the Uniform collection
-    pipeline.push(
-        { $lookup: { from: 'uniforms', localField: 'uniform', foreignField: '_id', as: 'uniform' } },
-        { $unwind: '$uniform' }
-    );
-
-    // 3. Secondary match for uniform properties (stage, type, size)
-    const uniformMatch = {};
-    if (stage) uniformMatch['uniform.stage'] = stage;
-    if (type) uniformMatch['uniform.type'] = type;
-    if (size) uniformMatch['uniform.size'] = Number(size); // Convert size to number for accurate matching
-
-    if (Object.keys(uniformMatch).length > 0) {
-        pipeline.push({ $match: uniformMatch });
-    }
-
-    return pipeline;
-};
+// --- Inventory Report Routes ---
 
 // Route to get a summarized inventory report
 router.post('/inventory-summary', async (req, res) => {
     try {
         const pipeline = buildInventoryQuery(req.body);
         
-        // Add grouping stage to the pipeline for summary
         pipeline.push({
             $group: {
                 _id: {
@@ -153,7 +152,7 @@ router.post('/inventory-summary', async (req, res) => {
 router.post('/inventory-details', async (req, res) => {
     try {
         const pipeline = buildInventoryQuery(req.body);
-        pipeline.push({ $sort: { entryDate: -1 } }); // Sort details by entry date
+        pipeline.push({ $sort: { entryDate: -1 } });
         const details = await Inventory.aggregate(pipeline);
         res.json(details);
     } catch (error) {
