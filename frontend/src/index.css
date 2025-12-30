@@ -1,0 +1,91 @@
+body {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tajawal', sans-serif;
+  margin: 0;
+}
+
+/* --- On-Screen Styles for the Grid --- */
+.barcode-wrapper {
+  padding: 10px; /* Adds space between cards on the screen */
+}
+
+.barcode-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.school-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.item-details {
+  font-size: 0.8rem;
+}
+
+
+/* --- FINAL AND COMPLETE PRINT STYLES --- */
+@media print {
+  @page {
+    size: A4 landscape; /* Set orientation to landscape */
+    margin: 1cm;
+  }
+
+  body {
+    background-color: white !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+
+  .printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .printable .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  /* This is the container for each card, it creates the margin */
+  .printable .barcode-wrapper {
+    padding: 5mm !important; /* This creates the space between labels */
+    height: 8cm; /* Give each label a fixed height for landscape */
+  }
+
+  /* This is the card itself, with the dashed border */
+  .printable .barcode-card {
+    border: 1px dashed #777 !important;
+    padding: 2mm !important;
+    background: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Make the barcode responsive */
+  .barcode-container svg {
+    width: 100% !important;
+    height: 50px !important;
+  }
+  
+  .school-name, .item-details {
+    color: #000 !important;
+    margin: 0.25rem 0;
+  }
+}
+@media print {
+  @page {
+    size: portrait;
+  }
+}
