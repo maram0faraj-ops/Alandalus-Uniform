@@ -23,6 +23,22 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // --- دالة ذكية لتوحيد المسميات ودمج المكرر ---
+  const normalizeStage = (stageName) => {
+    if (!stageName) return 'غير محدد';
+    let name = stageName.trim();
+    
+    // تصحيح الهمزات الشائعة
+    name = name.replace('اطفال', 'أطفال'); // تحويل اطفال -> أطفال
+    name = name.replace('إبتدائي', 'ابتدائي'); // توحيد همزة ابتدائي
+
+    // دمج "ابتدائي" العامة مع "ابتدائي بنات" (أو حسب رغبتك)
+    // هذا السطر يحل مشكلة ظهور الابتدائي مرتين بدمجهم في مسمى واحد
+    if (name === 'ابتدائي') return 'ابتدائي بنات'; 
+
+    return name;
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
@@ -37,25 +53,27 @@ function AdminDashboard() {
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- تصحيح منطق الرسم البياني (الحل لمشكلة البيانات الخاطئة) ---
-        const stageData = stageStatsRes.data;
-        
-        // 1. استخراج أسماء المراحل الفريدة بعد التنظيف
-        const stageLabels = [...new Set(stageData.map(item => item._id?.trim()))].filter(Boolean).sort();
+        // --- معالجة بيانات الرسم البياني (دمج القيم المكررة) ---
+        const rawStageData = stageStatsRes.data;
+        const processedData = {};
 
-        if (stageLabels.length > 0) {
+        rawStageData.forEach(item => {
+            // نستخدم الدالة لتوحيد الاسم قبل التجميع
+            const cleanName = normalizeStage(item._id);
+            // جمع الأرقام للمسميات المتشابهة
+            processedData[cleanName] = (processedData[cleanName] || 0) + item.count;
+        });
+
+        const labels = Object.keys(processedData).sort();
+        const dataValues = labels.map(label => processedData[label]);
+
+        if (labels.length > 0) {
             setStageChartData({
-              labels: stageLabels,
+              labels: labels,
               datasets: [
                 {
                   label: 'إجمالي الزي المسلّم',
-                  // 2. التغيير الجوهري هنا: نستخدم reduce لجمع كل القيم المتشابهة
-                  data: stageLabels.map(label => {
-                    // نجمع كل العناصر التي يتطابق اسمها (بعد التنظيف) مع الاسم الحالي
-                    return stageData
-                        .filter(item => item._id?.trim() === label)
-                        .reduce((sum, current) => sum + current.count, 0);
-                  }),
+                  data: dataValues,
                   backgroundColor: '#36A2EB',
                   borderRadius: 5,
                   barThickness: 40,
@@ -92,7 +110,6 @@ function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
-  // --- مكون البطاقة (StatCard) ---
   const StatCard = ({ title, value, icon, color, bg }) => (
     <Card className="border-0 shadow-sm h-100" style={{ backgroundColor: bg || '#fff' }}>
       <Card.Body className="d-flex align-items-center justify-content-between">
@@ -118,21 +135,18 @@ function AdminDashboard() {
         <p className="text-muted">نظرة عامة على حالة المخزون والتسليم</p>
       </div>
 
+      {/* تم تعديل التصميم: حذف بطاقة الأولياء وجعل البطاقتين الباقيتين تأخذان نصف الشاشة لكل منهما */}
       <Row className="g-4 mb-4">
-        <Col md={4}>
+        <Col md={6}>
           <StatCard title="إجمالي المخزون" value={stats?.totalStock ?? 0} icon="👕" color="#FFCE56" />
         </Col>
-        <Col md={4}>
+        <Col md={6}>
           <StatCard title="تم التسليم" value={stats?.deliveredStock ?? 0} icon="✅" color="#4BC0C0" />
-        </Col>
-        <Col md={4}>
-          <StatCard title="أولياء الأمور" value={stats?.totalParents ?? 0} icon="👥" color="#36A2EB" />
         </Col>
       </Row>
 
       <Row className="g-4">
         <Col lg={8}>
-            {/* المخطط الشريطي */}
             <Card className="border-0 shadow-sm mb-4">
                 <Card.Header className="bg-white border-0 pt-4 px-4">
                     <h5 className="fw-bold">📊 مستوى تسليم الزي حسب المرحلة</h5>
@@ -154,7 +168,6 @@ function AdminDashboard() {
                 </Card.Body>
             </Card>
 
-             {/* جدول التنبيهات */}
              <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 className="fw-bold text-danger">⚠️ تنبيهات المخزون المنخفض</h5>
