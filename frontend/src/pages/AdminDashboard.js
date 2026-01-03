@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Table, Badge } from 'react-bootstrap';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { FaTshirt, FaCheckCircle, FaUsers, FaExclamationTriangle, FaBoxOpen } from 'react-icons/fa'; // استيراد الأيقونات
+// تم إزالة استيراد react-icons لتجنب مشاكل التثبيت
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,9 +38,8 @@ function AdminDashboard() {
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- إعداد بيانات المخطط الشريطي (Bar Chart) ---
+        // --- إعداد بيانات المخطط الشريطي ---
         const stageData = stageStatsRes.data;
-        // تنظيف البيانات (إزالة الفراغات وتوحيد الأسماء)
         const stageLabels = [...new Set(stageData.map(item => item._id.stage?.trim()))].filter(Boolean).sort();
 
         if (stageLabels.length > 0) {
@@ -52,7 +51,7 @@ function AdminDashboard() {
                   data: stageLabels.map(label =>
                     stageData.find(item => item._id.stage?.trim() === label && item._id.paymentType === 'مدفوع')?.count || 0
                   ),
-                  backgroundColor: '#36A2EB', // أزرق هادئ
+                  backgroundColor: '#36A2EB',
                   borderRadius: 5,
                 },
                 {
@@ -60,15 +59,14 @@ function AdminDashboard() {
                   data: stageLabels.map(label =>
                     stageData.find(item => item._id.stage?.trim() === label && item._id.paymentType === 'مجاني')?.count || 0
                   ),
-                  backgroundColor: '#FF6384', // أحمر هادئ
+                  backgroundColor: '#FF6384',
                   borderRadius: 5,
                 },
               ],
             });
         }
 
-        // --- إعداد بيانات المخطط الدائري (Doughnut Chart) ---
-        // ترتيب البيانات لضمان تناسق الألوان
+        // --- إعداد بيانات المخطط الدائري ---
         const statusMap = { 'in_stock': 'في المخزون', 'delivered': 'تم التسليم' };
         const statusDataOrdered = statusStatsRes.data.map(item => ({
             label: statusMap[item._id] || item._id,
@@ -96,7 +94,7 @@ function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
-  // --- مكون فرعي لبطاقة الإحصائيات (StatCard Component) ---
+  // --- مكون البطاقة (StatCard) معدل ليقبل نصوص/إيموجي بدلاً من أيقونات ---
   const StatCard = ({ title, value, icon, color, bg }) => (
     <Card className="border-0 shadow-sm h-100" style={{ backgroundColor: bg || '#fff' }}>
       <Card.Body className="d-flex align-items-center justify-content-between">
@@ -105,8 +103,8 @@ function AdminDashboard() {
           <h3 className="fw-bold mb-0" style={{ color: color }}>{value}</h3>
         </div>
         <div className="d-flex align-items-center justify-content-center rounded-circle" 
-             style={{ width: '60px', height: '60px', backgroundColor: `${color}20` }}>
-          {React.cloneElement(icon, { size: 30, color: color })}
+             style={{ width: '60px', height: '60px', backgroundColor: `${color}20`, fontSize: '2rem' }}>
+          {icon}
         </div>
       </Card.Body>
     </Card>
@@ -125,13 +123,13 @@ function AdminDashboard() {
       {/* Row 1: Top Statistics Cards */}
       <Row className="g-4 mb-4">
         <Col md={4}>
-          <StatCard title="إجمالي المخزون" value={stats?.totalStock ?? 0} icon={<FaTshirt />} color="#FFCE56" />
+          <StatCard title="إجمالي المخزون" value={stats?.totalStock ?? 0} icon="👕" color="#FFCE56" />
         </Col>
         <Col md={4}>
-          <StatCard title="تم التسليم" value={stats?.deliveredStock ?? 0} icon={<FaCheckCircle />} color="#4BC0C0" />
+          <StatCard title="تم التسليم" value={stats?.deliveredStock ?? 0} icon="✅" color="#4BC0C0" />
         </Col>
         <Col md={4}>
-          <StatCard title="أولياء الأمور" value={stats?.totalParents ?? 0} icon={<FaUsers />} color="#36A2EB" />
+          <StatCard title="أولياء الأمور" value={stats?.totalParents ?? 0} icon="👥" color="#36A2EB" />
         </Col>
       </Row>
 
@@ -141,7 +139,7 @@ function AdminDashboard() {
             {/* Bar Chart */}
             <Card className="border-0 shadow-sm mb-4">
                 <Card.Header className="bg-white border-0 pt-4 px-4">
-                    <h5 className="fw-bold"><FaBoxOpen className="me-2 text-primary"/> تفصيل المخزون حسب المرحلة</h5>
+                    <h5 className="fw-bold">📦 تفصيل المخزون حسب المرحلة</h5>
                 </Card.Header>
                 <Card.Body className="px-4 pb-4">
                     <div style={{ height: '350px' }}>
@@ -160,10 +158,10 @@ function AdminDashboard() {
                 </Card.Body>
             </Card>
 
-             {/* Low Stock Alerts (Moved here for better flow) */}
+             {/* Low Stock Alerts */}
              <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 className="fw-bold text-danger"><FaExclamationTriangle className="me-2"/> تنبيهات المخزون المنخفض</h5>
+                    <h5 className="fw-bold text-danger">⚠️ تنبيهات المخزون المنخفض</h5>
                     <Badge bg="danger" pill>{lowStockAlerts.length} تنبيهات</Badge>
                 </Card.Header>
                 <Card.Body className="p-0">
@@ -199,7 +197,7 @@ function AdminDashboard() {
                         </div>
                     ) : (
                         <div className="text-center p-5">
-                            <FaCheckCircle size={40} className="text-success mb-3" />
+                            <h1 className="display-4">✅</h1>
                             <p className="text-muted">المخزون بحالة ممتازة!</p>
                         </div>
                     )}
@@ -226,7 +224,6 @@ function AdminDashboard() {
                                 }} 
                             />
                         }
-                         {/* Centered Text inside Doughnut */}
                         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -60%)', textAlign: 'center' }}>
                             <h2 className="fw-bold mb-0">{stats?.totalStock + stats?.deliveredStock || 0}</h2>
                             <small className="text-muted">إجمالي القطع</small>
