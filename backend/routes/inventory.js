@@ -1,63 +1,70 @@
+const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const auth = require('../middleware/auth');
 const inventoryRouter = express.Router();
-const Inventory = require('../models/Inventory');
-const Uniform = require('../models/Uniform');
 
-// 1. جلب المخزون مع فلترة اختيارية (الحالة، التاريخ)
+const Uniform = require('../models/Uniform');
+const Inventory = require('../models/Inventory');
+
+// --- POST /api/inventory/add ---
+inventoryRouter.post('/add', auth, async (req, res) => {
+    const { stage, type, size, quantity } = req.body;
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+        return res.status(400).json({ msg: 'الكمية يجب أن تكون رقماً صحيحاً موجباً' });
+    }
+    try {
+        let uniform = await Uniform.findOne({ stage, type, size });
+        if (!uniform) {
+            uniform = new Uniform({ stage, type, size });
+            await uniform.save();
+        }
+        const stageCodes = {'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', ' ابتدائي بنات': 'PGB', ' ابتدائي بنين': 'PBB', 'متوسط': 'INT', 'ثانوي': 'SEC'};
+        const typeCodes = {'رسمي': 'O', 'رياضي': 'S', 'جاكيت': 'J'};
+        const stageCode = stageCodes[stage] || 'UNK';
+        const typeCode = typeCodes[type] || 'X';
+        const newItems = [];
+        for (let i = 0; i < quantity; i++) {
+            const barcode = `AND-${stageCode}-${typeCode}${size}-${uuidv4().substring(0, 4)}`.toUpperCase();
+            newItems.push(new Inventory({ uniform: uniform._id, barcode: barcode }));
+        }
+        await Inventory.insertMany(newItems);
+        res.status(201).json({ msg: `تم إضافة ${quantity} قطعة للمخزون بنجاح` });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// --- GET /api/inventory/ (هذا هو الكود الذي كان مفقودًا) ---
 inventoryRouter.get('/', auth, async (req, res) => {
     try {
-        const { status, startDate, endDate } = req.query;
-        let query = {};
-        
-        if (status) query.status = status;
-        
-        // فلترة التاريخ في قاعدة البيانات
-        if (startDate || endDate) {
-            query.entryDate = {};
-            if (startDate) query.entryDate.$gte = new Date(startDate);
-            if (endDate) {
-                const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999);
-                query.entryDate.$lte = end;
-            }
+        const query = {};
+        if (req.query.status) {
+            query.status = req.query.status;
         }
-
         const items = await Inventory.find(query)
             .populate('uniform')
             .sort({ entryDate: -1 });
         res.json(items);
     } catch (err) {
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });
 
-// 2. تنبيه انخفاض المخزون (أقل من 20 قطعة لكل صنف)
-inventoryRouter.get('/low-stock-alerts', auth, async (req, res) => {
+// --- DELETE /api/inventory/:id ---
+ inventoryRouter.delete('/:id', auth, async (req, res) => {
     try {
-        // تجميع البيانات لحساب الكمية لكل نوع زي
-        const alerts = await Inventory.aggregate([
-            { $match: { status: 'in_stock' } },
-            { $group: { _id: "$uniform", count: { $sum: 1 } } },
-            { $match: { count: { $lt: 20 } } }, // التنبيه عند أقل من 20
-            { $lookup: { from: 'uniforms', localField: '_id', foreignField: '_id', as: 'details' } },
-            { $unwind: '$details' }
-        ]);
-        res.json(alerts);
+        const item = await Inventory.findById(req.params.id);
+         if (!item) {
+            return res.status(404).json({ msg: 'Item not found' });
+        }
+        await item.deleteOne();
+         res.json({ msg: 'Item removed successfully' });
     } catch (err) {
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
-});
-
-// 3. الحذف المتعدد (Bulk Delete)
-inventoryRouter.post('/bulk-delete', auth, async (req, res) => {
-    const { ids } = req.body;
-    try {
-        await Inventory.deleteMany({ _id: { $in: ids } });
-        res.json({ msg: `تم حذف ${ids.length} قطعة بنجاح` });
-    } catch (err) {
-        res.status(500).send('Server Error');
-    }
-});
+ });
 
 module.exports = inventoryRouter;

@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 const cron = require('node-cron'); // --- جديد ---: مكتبة المهام المجدولة
-const reportsRouter = require('./routes/reports');
+
 
 // Initialize the app
 const app = express();
@@ -52,7 +52,6 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/notifications', notificationRoutes); // --- جديد ---
 app.use('/api/reports', reportRoutes); // --- جديد ---
 app.use('/api/uniforms', uniformsRoutes);
-app.use('/api/reports', reportsRouter);
 
 // --- جديد ---: المهمة المجدولة لفحص المخزون المنخفض
 // سيتم تشغيل هذا الكود كل يوم الساعة 8 صباحاً بتوقيت السيرفر
