@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Table, Button, Spinner, Alert, Modal, Card, Form, Row, Col } from 'react-bootstrap';
-import axios from 'axios'; // استبدال api بـ axios
+import axios from 'axios';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 function ManageInventoryPage() {
@@ -20,21 +20,26 @@ function ManageInventoryPage() {
 
     const [showScanner, setShowScanner] = useState(false);
 
-    // إعداد axios مع التوكن
+    // إعداد رابط الـ API
+    // تأكد من أن هذا الرابط يطابق رابط الخادم الخلفي الخاص بك
+    const API_URL = 'http://localhost:5001'; 
+    
     const getAuthHeader = () => {
         const token = localStorage.getItem('token');
-        return { headers: { 'x-auth-token': token } };
+        return { 
+            headers: { 
+                'x-auth-token': token,
+                'Content-Type': 'application/json'
+            } 
+        };
     };
-
-    const API_URL = 'http://localhost:5001'; // تأكد من أن هذا الرابط صحيح لخادمك
 
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                // استخدام axios مباشرة مع الرابط الكامل
                 const response = await axios.get(`${API_URL}/api/inventory?status=in_stock`, getAuthHeader());
                 const data = response.data;
-                // إضافة dateAdded إذا لم يكن موجوداً
+                
                 const processedData = data.map(item => ({
                     ...item,
                     entryDate: item.entryDate || item.dateAdded || new Date().toISOString()
@@ -43,14 +48,21 @@ function ManageInventoryPage() {
                 setAllItems(processedData);
                 setFilteredItems(processedData);
                 
-                const uniqueStages = [...new Set(processedData.map(item => item.uniform?.stage).filter(Boolean))];
-                const uniqueTypes = [...new Set(processedData.map(item => item.uniform?.type).filter(Boolean))];
-                const uniqueSizes = [...new Set(processedData.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
+                const uniqueStages = [...new Set(processedData.map(item => item.uniform?.stage || item.stage).filter(Boolean))];
+                const uniqueTypes = [...new Set(processedData.map(item => item.uniform?.type || item.uniformType).filter(Boolean))];
+                const uniqueSizes = [...new Set(processedData.map(item => item.uniform?.size || item.size).filter(Boolean))].sort((a, b) => a - b);
                 
                 setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
             } catch (err) {
                 console.error("Error fetching items:", err);
-                setError('فشل في تحميل بيانات المخزون.');
+                // التعامل مع أخطاء الشبكة بشكل أوضح
+                if (err.message === 'Network Error') {
+                    setError('خطأ في الاتصال بالخادم. يرجى التأكد من أن الخادم يعمل.');
+                } else if (err.response) {
+                    setError(`خطأ من الخادم: ${err.response.data.msg || err.response.statusText}`);
+                } else {
+                    setError('فشل في تحميل بيانات المخزون.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -62,11 +74,17 @@ function ManageInventoryPage() {
     // الفلترة
     useEffect(() => {
         let result = allItems;
-        if (filters.stage !== 'all') result = result.filter(item => item.uniform?.stage === filters.stage);
-        if (filters.type !== 'all') result = result.filter(item => item.uniform?.type === filters.type);
-        if (filters.size !== 'all') result = result.filter(item => item.uniform?.size === filters.size);
+        if (filters.stage !== 'all') {
+            result = result.filter(item => (item.uniform?.stage || item.stage) === filters.stage);
+        }
+        if (filters.type !== 'all') {
+            result = result.filter(item => (item.uniform?.type || item.uniformType) === filters.type);
+        }
+        if (filters.size !== 'all') {
+            result = result.filter(item => (item.uniform?.size || item.size) === filters.size);
+        }
         setFilteredItems(result);
-        setSelectedIds(new Set()); // إعادة تعيين التحديد عند الفلترة
+        setSelectedIds(new Set()); 
     }, [filters, allItems]);
 
 
@@ -105,11 +123,11 @@ function ManageInventoryPage() {
 
     const handleDeleteItems = async () => {
         try {
-            // حذف العناصر المتعددة
-            const deletePromises = itemsToDelete.map(item => axios.delete(`${API_URL}/api/inventory/${item._id}`, getAuthHeader()));
+            const deletePromises = itemsToDelete.map(item => 
+                axios.delete(`${API_URL}/api/inventory/${item._id}`, getAuthHeader())
+            );
             await Promise.all(deletePromises);
 
-            // تحديث الواجهة
             const deletedIds = new Set(itemsToDelete.map(i => i._id));
             setAllItems(prev => prev.filter(item => !deletedIds.has(item._id)));
             setSelectedIds(new Set());
@@ -121,6 +139,10 @@ function ManageInventoryPage() {
         }
     };
 
+    const clearFilters = () => {
+        setFilters({ stage: 'all', type: 'all', size: 'all' });
+    };
+
     if (loading) return <Container className="text-center mt-5"><Spinner animation="border" variant="primary" /></Container>;
     if (error) return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
 
@@ -129,7 +151,7 @@ function ManageInventoryPage() {
             <Container className="mt-4">
                 <Card className="mb-4 shadow-sm">
                     <Card.Body>
-                        <Row className="align-items-center">
+                        <Row className="align-items-center mb-3">
                             <Col><h3>إدارة المخزون ({filteredItems.length})</h3></Col>
                             <Col xs="auto">
                                 {selectedIds.size > 0 && (
@@ -139,33 +161,58 @@ function ManageInventoryPage() {
                                             const items = filteredItems.filter(i => selectedIds.has(i._id));
                                             handleShowDeleteConfirm(items);
                                         }}
-                                        className="me-2"
                                     >
                                         حذف المحدد ({selectedIds.size})
                                     </Button>
                                 )}
                             </Col>
                         </Row>
-                         <Row className="mt-3">
-                            <Col md={3}>
-                                <Form.Select value={filters.stage} onChange={(e) => setFilters({...filters, stage: e.target.value})}>
-                                    <option value="all">كل المراحل</option>
-                                    {filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Select value={filters.type} onChange={(e) => setFilters({...filters, type: e.target.value})}>
-                                    <option value="all">كل الأنواع</option>
-                                    {filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
-                                </Form.Select>
-                            </Col>
-                             <Col md={3}>
-                                <Form.Select value={filters.size} onChange={(e) => setFilters({...filters, size: e.target.value})}>
-                                    <option value="all">كل المقاسات</option>
-                                    {filterOptions.sizes.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Col>
-                        </Row>
+                        
+                        <Form>
+                            <Row>
+                                <Col md={3}>
+                                    <Form.Group>
+                                        <Form.Label>المرحلة</Form.Label>
+                                        <Form.Select 
+                                            value={filters.stage} 
+                                            onChange={(e) => setFilters({...filters, stage: e.target.value})}
+                                        >
+                                            <option value="all">الكل</option>
+                                            {filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={3}>
+                                    <Form.Group>
+                                        <Form.Label>النوع</Form.Label>
+                                        <Form.Select 
+                                            value={filters.type} 
+                                            onChange={(e) => setFilters({...filters, type: e.target.value})}
+                                        >
+                                            <option value="all">الكل</option>
+                                            {filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={3}>
+                                    <Form.Group>
+                                        <Form.Label>المقاس</Form.Label>
+                                        <Form.Select 
+                                            value={filters.size} 
+                                            onChange={(e) => setFilters({...filters, size: e.target.value})}
+                                        >
+                                            <option value="all">الكل</option>
+                                            {filterOptions.sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={3} className="d-flex align-items-end">
+                                    <Button variant="outline-secondary" onClick={clearFilters} className="w-100">
+                                        مسح الفلاتر
+                                    </Button>
+                                </Col>
+                            </Row>
+                        </Form>
                     </Card.Body>
                 </Card>
 
@@ -199,9 +246,9 @@ function ManageInventoryPage() {
                                     />
                                 </td>
                                 <td>{index + 1}</td>
-                                <td>{item.uniform?.stage}</td>
-                                <td>{item.uniform?.type}</td>
-                                <td>{item.uniform?.size}</td>
+                                <td>{item.uniform?.stage || item.stage}</td>
+                                <td>{item.uniform?.type || item.uniformType}</td>
+                                <td>{item.uniform?.size || item.size}</td>
                                 <td>{item.barcode}</td>
                                 <td>{new Date(item.entryDate).toLocaleString('ar-SA')}</td>
                                 <td>
