@@ -7,7 +7,6 @@ function ManageInventoryPage() {
     const [allItems, setAllItems] = useState([]);
     const [filteredItems, setFilteredItems] = useState([]);
     
-    // --- تعديل: إضافة حقول التاريخ للحالة ---
     const [filters, setFilters] = useState({ 
         stage: 'all', 
         type: 'all', 
@@ -20,7 +19,6 @@ function ManageInventoryPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     
-    // حالات الحذف والتحديد
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [itemsToDelete, setItemsToDelete] = useState([]);
     const [selectedIds, setSelectedIds] = useState(new Set());
@@ -33,8 +31,12 @@ function ManageInventoryPage() {
                 const data = response.data;
                 setAllItems(data);
                 setFilteredItems(data);
-                const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))];
-                const uniqueTypes = [...new Set(data.map(item => item.uniform?.type).filter(Boolean))];
+
+                // --- التعديل هنا: استخدام .trim() لتوحيد الأسماء المكررة ---
+                const uniqueStages = [...new Set(data.map(item => item.uniform?.stage?.trim()).filter(Boolean))];
+                const uniqueTypes = [...new Set(data.map(item => item.uniform?.type?.trim()).filter(Boolean))];
+                // --------------------------------------------------------
+
                 const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
                 setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
             } catch (err) {
@@ -46,30 +48,30 @@ function ManageInventoryPage() {
         fetchItems();
     }, []);
 
-    // --- تعديل: منطق الفلترة ليشمل التاريخ ---
     useEffect(() => {
         let result = allItems;
 
-        // فلترة الخيارات
+        // --- التعديل هنا: استخدام .trim() عند المقارنة لدمج البيانات ---
         if (filters.stage !== 'all') {
-            result = result.filter(item => item.uniform?.stage === filters.stage);
+            result = result.filter(item => item.uniform?.stage?.trim() === filters.stage);
         }
         if (filters.type !== 'all') {
-            result = result.filter(item => item.uniform?.type === filters.type);
+            result = result.filter(item => item.uniform?.type?.trim() === filters.type);
         }
+        // -----------------------------------------------------------
+        
         if (filters.size !== 'all') {
             result = result.filter(item => item.uniform?.size === Number(filters.size));
         }
 
-        // فلترة التاريخ
         if (filters.startDate) {
             const start = new Date(filters.startDate);
-            start.setHours(0, 0, 0, 0); // بداية اليوم
+            start.setHours(0, 0, 0, 0); 
             result = result.filter(item => new Date(item.entryDate) >= start);
         }
         if (filters.endDate) {
             const end = new Date(filters.endDate);
-            end.setHours(23, 59, 59, 999); // نهاية اليوم
+            end.setHours(23, 59, 59, 999); 
             result = result.filter(item => new Date(item.entryDate) <= end);
         }
 
@@ -97,12 +99,10 @@ function ManageInventoryPage() {
         setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // دالة لإعادة تعيين الفلاتر
     const resetFilters = () => {
         setFilters({ stage: 'all', type: 'all', size: 'all', startDate: '', endDate: '' });
     };
 
-    // --- دوال التحديد ---
     const handleSelectAll = (e) => {
         if (e.target.checked) {
             const allIds = filteredItems.map(item => item._id);
@@ -122,7 +122,6 @@ function ManageInventoryPage() {
         setSelectedIds(newSelected);
     };
 
-    // --- دوال الحذف ---
     const handleShowConfirmModal = (items) => {
         setItemsToDelete(items);
         setShowConfirmModal(true);
@@ -199,7 +198,6 @@ function ManageInventoryPage() {
                             <Col md={3} className="d-flex align-items-end"><Button variant="primary" className="w-100" onClick={() => setShowScanner(true)}>📸 مسح باركود للحذف</Button></Col>
                         </Row>
                         
-                        {/* --- صف جديد للتاريخ --- */}
                         <Row>
                             <Col md={4}>
                                 <Form.Group>
