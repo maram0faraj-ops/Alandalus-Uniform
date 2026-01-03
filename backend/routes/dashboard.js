@@ -18,7 +18,7 @@ router.get('/stats', async (req, res) => {
     // 2. إجمالي القطع التي تم تسليمها
     const deliveredStock = await Delivery.countDocuments();
     
-    // 3. إجمالي عدد أولياء الأمور المسجلين
+    // 3. إجمالي عدد أولياء الأمور (يمكنك استخدامها أو تجاهلها في الواجهة)
     const totalParents = await User.countDocuments({ role: 'parent' });
 
     res.json({ totalStock, deliveredStock, totalParents });
@@ -62,20 +62,43 @@ router.get('/low-stock-alerts', async (req, res) => {
 
 /**
  * @route   GET /api/dashboard/stage-payment-stats
- * @desc    إحصائيات مستوى التسليم حسب المرحلة
- * @note    تم التعديل للاعتماد على حقل 'stage' في جدول التسليم مباشرة لضمان الدقة
+ * @desc    إحصائيات مستوى التسليم حسب المرحلة (مصححة ودقيقة)
+ * @note    يعتمد هذا الكود الآن على جدول 'Uniforms' لضمان صحة التصنيف وتجاهل أخطاء الإدخال اليدوي
  */
 router.get('/stage-payment-stats', async (req, res) => {
   try {
     const stats = await Delivery.aggregate([
+      // 1. الانتقال من جدول التسليم إلى جدول المخزون لمعرفة القطعة الأصلية
+      {
+        $lookup: {
+          from: 'inventories',
+          localField: 'inventoryItem',
+          foreignField: '_id',
+          as: 'inventoryDetails'
+        }
+      },
+      { $unwind: '$inventoryDetails' },
+
+      // 2. الانتقال من جدول المخزون إلى جدول تعريف الزي (Uniforms) لجلب المرحلة الصحيحة
+      {
+        $lookup: {
+          from: 'uniforms',
+          localField: 'inventoryDetails.uniform',
+          foreignField: '_id',
+          as: 'uniformDetails'
+        }
+      },
+      { $unwind: '$uniformDetails' },
+
+      // 3. التجميع حسب المرحلة (مع تنظيف المسافات لضمان عدم التكرار)
       {
         $group: {
-          // نستخدم حقل المرحلة المباشر في سجل التسليم لأنه الأدق
-          _id: "$stage", 
+          _id: { $trim: { input: "$uniformDetails.stage" } }, // استخدام trim لدمج "ابتدائي " مع "ابتدائي"
           count: { $sum: 1 }
         }
       },
-      // ترتيب النتائج أبجدياً لضمان ظهور المخطط بشكل مرتب
+      
+      // 4. ترتيب النتائج أبجدياً
       { $sort: { "_id": 1 } }
     ]);
     res.json(stats);
