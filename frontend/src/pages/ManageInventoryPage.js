@@ -37,7 +37,7 @@ function ManageInventoryPage() {
                 // إضافة dateAdded إذا لم يكن موجوداً
                 const processedData = data.map(item => ({
                     ...item,
-                    entryDate: item.entryDate || new Date().toISOString()
+                    entryDate: item.entryDate || item.dateAdded || new Date().toISOString()
                 }));
                 
                 setAllItems(processedData);
