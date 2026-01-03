@@ -8,7 +8,13 @@ const Inventory = require('../models/Inventory');
 
 // --- POST /api/inventory/add ---
 inventoryRouter.post('/add', auth, async (req, res) => {
-    const { stage, type, size, quantity } = req.body;
+    let { stage, type, size, quantity } = req.body; // استخدمت let للسماح بالتعديل
+    
+    // --- تعديل: إزالة المسافات الزائدة من المدخلات ---
+    if (stage) stage = stage.trim();
+    if (type) type = type.trim();
+    // ---------------------------------------------
+
     if (!Number.isInteger(quantity) || quantity <= 0) {
         return res.status(400).json({ msg: 'الكمية يجب أن تكون رقماً صحيحاً موجباً' });
     }
@@ -18,8 +24,18 @@ inventoryRouter.post('/add', auth, async (req, res) => {
             uniform = new Uniform({ stage, type, size });
             await uniform.save();
         }
-        const stageCodes = {'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', ' ابتدائي بنات': 'PGB', ' ابتدائي بنين': 'PBB', 'متوسط': 'INT', 'ثانوي': 'SEC'};
+        
+        // --- تعديل: تم تصحيح المفاتيح بإزالة المسافة الزائدة في البداية ---
+        const stageCodes = {
+            'رياض أطفال بنات': 'KGG', 
+            'رياض أطفال بنين': 'KGB', 
+            'ابتدائي بنات': 'PGB', // كانت ' ابتدائي بنات'
+            'ابتدائي بنين': 'PBB', // كانت ' ابتدائي بنين'
+            'متوسط': 'INT', 
+            'ثانوي': 'SEC'
+        };
         const typeCodes = {'رسمي': 'O', 'رياضي': 'S', 'جاكيت': 'J'};
+        
         const stageCode = stageCodes[stage] || 'UNK';
         const typeCode = typeCodes[type] || 'X';
         const newItems = [];
@@ -35,7 +51,7 @@ inventoryRouter.post('/add', auth, async (req, res) => {
     }
 });
 
-// --- GET /api/inventory/ (هذا هو الكود الذي كان مفقودًا) ---
+// --- GET /api/inventory/ ---
 inventoryRouter.get('/', auth, async (req, res) => {
     try {
         const query = {};
