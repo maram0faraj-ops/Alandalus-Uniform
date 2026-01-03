@@ -7,6 +7,8 @@ import './index.css';
 
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import 'bootstrap/dist/css/bootstrap.min.css'; // استيراد بوتستراب الأساسي
+import './index.css'; // استيراد التعديلات الاحترافية التي كتبناها
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
