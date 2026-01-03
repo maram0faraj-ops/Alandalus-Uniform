@@ -12,7 +12,6 @@ function DeliverUniformPage() {
     stage: ' ابتدائي بنات',
     grade: 'أول',
     section: 'أ',
-    // تمت إضافة حالة جديدة لنوع الدفع
     paymentType: 'مدفوع', 
   });
   const [loading, setLoading] = useState(false);
@@ -37,10 +36,16 @@ function DeliverUniformPage() {
     try {
       const response = await api.get(`/api/delivery/item/${barcode}`);
       setItem(response.data);
-      // تحديث نوع الدفع بناءً على القطعة التي تم العثور عليها
+      
+      // --- التعديل هنا: ضمان وجود قيمة افتراضية ---
       if (response.data && response.data.uniform) {
-          setStudentData(prev => ({ ...prev, paymentType: response.data.uniform.paymentType }));
+          setStudentData(prev => ({ 
+            ...prev, 
+            paymentType: response.data.uniform.paymentType || 'مدفوع' 
+          }));
       }
+      // ------------------------------------------
+
     } catch (err) {
       setError(err.response?.data?.msg || 'حدث خطأ أثناء البحث عن الباركود');
     } finally {
@@ -59,6 +64,7 @@ function DeliverUniformPage() {
       setSuccess('تم توثيق عملية التسليم بنجاح!');
       setBarcode('');
       setItem(null);
+      // إعادة تعيين النموذج للوضع الافتراضي
       setStudentData({ studentName: '', stage: 'ابتدائي', grade: 'أول', section: 'أ', paymentType: 'مدفوع' });
     } catch (err) {
       setError(err.response?.data?.msg || 'حدث خطأ أثناء توثيق التسليم');
@@ -91,7 +97,7 @@ function DeliverUniformPage() {
           {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
           {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
           
-          {!item && ( // إخفاء البحث بعد العثور على قطعة
+          {!item && ( 
             showScanner ? (
               <div className="mb-3 text-center">
                 <div style={{ maxWidth: '400px', margin: 'auto', border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
@@ -145,7 +151,6 @@ function DeliverUniformPage() {
                     <Form.Control type="text" name="studentName" value={studentData.studentName} onChange={handleStudentDataChange} required />
                   </Form.Group>
                   <Row>
-                    {/* عمود المرحلة والصف والشعبة */}
                     <Col md={8}>
                       <Row>
                         <Col>
@@ -174,7 +179,6 @@ function DeliverUniformPage() {
                         </Col>
                       </Row>
                     </Col>
-                    {/* === القائمة المنسدلة الجديدة لنوع الدفع === */}
                     <Col md={4}>
                       <Form.Group className="mb-3">
                         <Form.Label>نوع الدفع</Form.Label>
