@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Table, Badge } from 'react-bootstrap';
 import { Bar, Doughnut } from 'react-chartjs-2';
-// استخدام مكتبة Chart.js فقط (بدون أيقونات خارجية لتفادي الأخطاء)
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,16 +30,17 @@ function AdminDashboard() {
         const [statsRes, alertsRes, stageStatsRes, statusStatsRes] = await Promise.all([
           api.get('/api/dashboard/stats'),
           api.get('/api/dashboard/low-stock-alerts'),
-          api.get('/api/dashboard/stage-payment-stats'), // نفس الرابط لكن البيانات تغيرت هيكلتها
+          api.get('/api/dashboard/stage-payment-stats'),
           api.get('/api/dashboard/delivery-status-stats'),
         ]);
 
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- إعداد بيانات المخطط الشريطي (المعدل) ---
+        // --- تصحيح منطق الرسم البياني (الحل لمشكلة البيانات الخاطئة) ---
         const stageData = stageStatsRes.data;
-        // استخراج المراحل (مثل: ابتدائي، متوسط..) وتنظيف النصوص
+        
+        // 1. استخراج أسماء المراحل الفريدة بعد التنظيف
         const stageLabels = [...new Set(stageData.map(item => item._id?.trim()))].filter(Boolean).sort();
 
         if (stageLabels.length > 0) {
@@ -48,14 +48,17 @@ function AdminDashboard() {
               labels: stageLabels,
               datasets: [
                 {
-                  label: 'إجمالي الزي المسلّم', // تسمية موحدة
-                  data: stageLabels.map(label =>
-                    // البحث عن العدد المقابل للمرحلة
-                    stageData.find(item => item._id?.trim() === label)?.count || 0
-                  ),
-                  backgroundColor: '#36A2EB', // لون موحد أزرق
+                  label: 'إجمالي الزي المسلّم',
+                  // 2. التغيير الجوهري هنا: نستخدم reduce لجمع كل القيم المتشابهة
+                  data: stageLabels.map(label => {
+                    // نجمع كل العناصر التي يتطابق اسمها (بعد التنظيف) مع الاسم الحالي
+                    return stageData
+                        .filter(item => item._id?.trim() === label)
+                        .reduce((sum, current) => sum + current.count, 0);
+                  }),
+                  backgroundColor: '#36A2EB',
                   borderRadius: 5,
-                  barThickness: 40, // جعل العمود أعرض قليلاً
+                  barThickness: 40,
                 }
               ],
             });
@@ -115,7 +118,6 @@ function AdminDashboard() {
         <p className="text-muted">نظرة عامة على حالة المخزون والتسليم</p>
       </div>
 
-      {/* الصف الأول: البطاقات العلوية */}
       <Row className="g-4 mb-4">
         <Col md={4}>
           <StatCard title="إجمالي المخزون" value={stats?.totalStock ?? 0} icon="👕" color="#FFCE56" />
@@ -129,9 +131,8 @@ function AdminDashboard() {
       </Row>
 
       <Row className="g-4">
-        {/* العمود الأيمن (كبير): الرسم البياني والتنبيهات */}
         <Col lg={8}>
-            {/* المخطط الشريطي: مستوى التسليم حسب المرحلة */}
+            {/* المخطط الشريطي */}
             <Card className="border-0 shadow-sm mb-4">
                 <Card.Header className="bg-white border-0 pt-4 px-4">
                     <h5 className="fw-bold">📊 مستوى تسليم الزي حسب المرحلة</h5>
@@ -144,7 +145,7 @@ function AdminDashboard() {
                                 options={{ 
                                     responsive: true, 
                                     maintainAspectRatio: false,
-                                    plugins: { legend: { display: false } }, // إخفاء المفتاح لأنه عمود واحد
+                                    plugins: { legend: { display: false } },
                                     scales: { y: { beginAtZero: true, grid: { display: true, color: '#f0f0f0' } }, x: { grid: { display: false } } }
                                 }} 
                             /> 
@@ -153,7 +154,7 @@ function AdminDashboard() {
                 </Card.Body>
             </Card>
 
-             {/* جدول تنبيهات المخزون المنخفض */}
+             {/* جدول التنبيهات */}
              <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 className="fw-bold text-danger">⚠️ تنبيهات المخزون المنخفض</h5>
@@ -200,7 +201,6 @@ function AdminDashboard() {
             </Card>
         </Col>
 
-        {/* العمود الأيسر (صغير): الدائرة والملخص */}
         <Col lg={4}>
             <Card className="border-0 shadow-sm h-100">
                 <Card.Header className="bg-white border-0 pt-4 px-4">
@@ -226,7 +226,7 @@ function AdminDashboard() {
                     </div>
                     <div className="mt-4 w-100">
                         <Alert variant="info" className="mb-0 text-center border-0 bg-opacity-10">
-                             <small>يتم تحديث البيانات تلقائياً عند كل تسليم</small>
+                             <small>يتم تحديث البيانات تلقائياً</small>
                         </Alert>
                     </div>
                 </Card.Body>
