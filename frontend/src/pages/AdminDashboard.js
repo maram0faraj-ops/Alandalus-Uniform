@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Table, Badge } from 'react-bootstrap';
 import { Bar, Doughnut } from 'react-chartjs-2';
-// تم إزالة استيراد react-icons لتجنب مشاكل التثبيت
+// استخدام مكتبة Chart.js فقط (بدون أيقونات خارجية لتفادي الأخطاء)
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,37 +31,32 @@ function AdminDashboard() {
         const [statsRes, alertsRes, stageStatsRes, statusStatsRes] = await Promise.all([
           api.get('/api/dashboard/stats'),
           api.get('/api/dashboard/low-stock-alerts'),
-          api.get('/api/dashboard/stage-payment-stats'),
+          api.get('/api/dashboard/stage-payment-stats'), // نفس الرابط لكن البيانات تغيرت هيكلتها
           api.get('/api/dashboard/delivery-status-stats'),
         ]);
 
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- إعداد بيانات المخطط الشريطي ---
+        // --- إعداد بيانات المخطط الشريطي (المعدل) ---
         const stageData = stageStatsRes.data;
-        const stageLabels = [...new Set(stageData.map(item => item._id.stage?.trim()))].filter(Boolean).sort();
+        // استخراج المراحل (مثل: ابتدائي، متوسط..) وتنظيف النصوص
+        const stageLabels = [...new Set(stageData.map(item => item._id?.trim()))].filter(Boolean).sort();
 
         if (stageLabels.length > 0) {
             setStageChartData({
               labels: stageLabels,
               datasets: [
                 {
-                  label: 'مدفوع',
+                  label: 'إجمالي الزي المسلّم', // تسمية موحدة
                   data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage?.trim() === label && item._id.paymentType === 'مدفوع')?.count || 0
+                    // البحث عن العدد المقابل للمرحلة
+                    stageData.find(item => item._id?.trim() === label)?.count || 0
                   ),
-                  backgroundColor: '#36A2EB',
+                  backgroundColor: '#36A2EB', // لون موحد أزرق
                   borderRadius: 5,
-                },
-                {
-                  label: 'مجاني',
-                  data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage?.trim() === label && item._id.paymentType === 'مجاني')?.count || 0
-                  ),
-                  backgroundColor: '#FF6384',
-                  borderRadius: 5,
-                },
+                  barThickness: 40, // جعل العمود أعرض قليلاً
+                }
               ],
             });
         }
@@ -94,7 +89,7 @@ function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
-  // --- مكون البطاقة (StatCard) معدل ليقبل نصوص/إيموجي بدلاً من أيقونات ---
+  // --- مكون البطاقة (StatCard) ---
   const StatCard = ({ title, value, icon, color, bg }) => (
     <Card className="border-0 shadow-sm h-100" style={{ backgroundColor: bg || '#fff' }}>
       <Card.Body className="d-flex align-items-center justify-content-between">
@@ -120,7 +115,7 @@ function AdminDashboard() {
         <p className="text-muted">نظرة عامة على حالة المخزون والتسليم</p>
       </div>
 
-      {/* Row 1: Top Statistics Cards */}
+      {/* الصف الأول: البطاقات العلوية */}
       <Row className="g-4 mb-4">
         <Col md={4}>
           <StatCard title="إجمالي المخزون" value={stats?.totalStock ?? 0} icon="👕" color="#FFCE56" />
@@ -134,12 +129,12 @@ function AdminDashboard() {
       </Row>
 
       <Row className="g-4">
-        {/* Row 2, Col 1: Charts (Left Side - 8 columns) */}
+        {/* العمود الأيمن (كبير): الرسم البياني والتنبيهات */}
         <Col lg={8}>
-            {/* Bar Chart */}
+            {/* المخطط الشريطي: مستوى التسليم حسب المرحلة */}
             <Card className="border-0 shadow-sm mb-4">
                 <Card.Header className="bg-white border-0 pt-4 px-4">
-                    <h5 className="fw-bold">📦 تفصيل المخزون حسب المرحلة</h5>
+                    <h5 className="fw-bold">📊 مستوى تسليم الزي حسب المرحلة</h5>
                 </Card.Header>
                 <Card.Body className="px-4 pb-4">
                     <div style={{ height: '350px' }}>
@@ -149,16 +144,16 @@ function AdminDashboard() {
                                 options={{ 
                                     responsive: true, 
                                     maintainAspectRatio: false,
-                                    plugins: { legend: { position: 'bottom' } },
-                                    scales: { y: { grid: { display: true, color: '#f0f0f0' } }, x: { grid: { display: false } } }
+                                    plugins: { legend: { display: false } }, // إخفاء المفتاح لأنه عمود واحد
+                                    scales: { y: { beginAtZero: true, grid: { display: true, color: '#f0f0f0' } }, x: { grid: { display: false } } }
                                 }} 
                             /> 
-                        : <p className="text-center text-muted mt-5">لا توجد بيانات متاحة</p>}
+                        : <p className="text-center text-muted mt-5">جاري تجميع البيانات...</p>}
                     </div>
                 </Card.Body>
             </Card>
 
-             {/* Low Stock Alerts */}
+             {/* جدول تنبيهات المخزون المنخفض */}
              <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 className="fw-bold text-danger">⚠️ تنبيهات المخزون المنخفض</h5>
@@ -205,11 +200,11 @@ function AdminDashboard() {
             </Card>
         </Col>
 
-        {/* Row 2, Col 2: Doughnut Chart & Summary (Right Side - 4 columns) */}
+        {/* العمود الأيسر (صغير): الدائرة والملخص */}
         <Col lg={4}>
             <Card className="border-0 shadow-sm h-100">
                 <Card.Header className="bg-white border-0 pt-4 px-4">
-                    <h5 className="fw-bold">نسبة التوزيع</h5>
+                    <h5 className="fw-bold">نسبة التوزيع الكلية</h5>
                 </Card.Header>
                 <Card.Body className="d-flex flex-column justify-content-center align-items-center">
                     <div style={{ width: '100%', height: '300px', position: 'relative' }}>
@@ -231,7 +226,7 @@ function AdminDashboard() {
                     </div>
                     <div className="mt-4 w-100">
                         <Alert variant="info" className="mb-0 text-center border-0 bg-opacity-10">
-                             <small>يتم تحديث البيانات تلقائياً</small>
+                             <small>يتم تحديث البيانات تلقائياً عند كل تسليم</small>
                         </Alert>
                     </div>
                 </Card.Body>
