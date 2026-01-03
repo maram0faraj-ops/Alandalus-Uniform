@@ -10,8 +10,11 @@ function ManageInventoryPage() {
     const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    
+    // --- تعديل: حالات الحذف والتحديد ---
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState(null);
+    const [itemsToDelete, setItemsToDelete] = useState([]); // قائمة العناصر المراد حذفها (واحد أو أكثر)
+    const [selectedIds, setSelectedIds] = useState(new Set()); // لتخزين معرفات العناصر المحددة
     const [showScanner, setShowScanner] = useState(false);
 
     useEffect(() => {
@@ -34,6 +37,7 @@ function ManageInventoryPage() {
         fetchItems();
     }, []);
 
+    // إعادة ضبط التحديد عند تغيير الفلترة
     useEffect(() => {
         let result = allItems;
         if (filters.stage !== 'all') {
@@ -46,13 +50,14 @@ function ManageInventoryPage() {
             result = result.filter(item => item.uniform?.size === Number(filters.size));
         }
         setFilteredItems(result);
+        setSelectedIds(new Set()); // إلغاء التحديد عند الفلترة
     }, [filters, allItems]);
 
     const handleScanSuccess = (scannedBarcode) => {
         setShowScanner(false);
         const itemFound = allItems.find(item => item.barcode === scannedBarcode);
         if (itemFound) {
-            handleShowConfirmModal(itemFound);
+            handleShowConfirmModal([itemFound]);
         } else {
             setError('الباركود غير موجود في المخزون الحالي.');
         }
@@ -68,25 +73,58 @@ function ManageInventoryPage() {
         setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleShowConfirmModal = (item) => {
-        setItemToDelete(item);
+    // --- دوال التحديد ---
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const allIds = filteredItems.map(item => item._id);
+            setSelectedIds(new Set(allIds));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleSelectOne = (id) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    // --- دوال الحذف ---
+    const handleShowConfirmModal = (items) => {
+        setItemsToDelete(items);
         setShowConfirmModal(true);
     };
 
     const handleCloseConfirmModal = () => {
-        setItemToDelete(null);
+        setItemsToDelete([]);
         setShowConfirmModal(false);
     };
 
-    const handleDeleteItem = async () => {
-        if (!itemToDelete) return;
+    const handleDeleteConfirmed = async () => {
+        if (itemsToDelete.length === 0) return;
+        
         try {
-            await api.delete(`/api/inventory/${itemToDelete._id}`);
-            setAllItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
-            setFilteredItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
+            // نقوم بحذف العناصر بالتوازي
+            const deletePromises = itemsToDelete.map(item => api.delete(`/api/inventory/${item._id}`));
+            await Promise.all(deletePromises);
+
+            // تحديث الواجهة بعد الحذف الناجح
+            const deletedIds = new Set(itemsToDelete.map(i => i._id));
+            setAllItems(current => current.filter(item => !deletedIds.has(item._id)));
+            setFilteredItems(current => current.filter(item => !deletedIds.has(item._id)));
+            
+            // تنظيف التحديد
+            const newSelectedIds = new Set(selectedIds);
+            itemsToDelete.forEach(item => newSelectedIds.delete(item._id));
+            setSelectedIds(newSelectedIds);
+
             handleCloseConfirmModal();
         } catch (err) {
-            setError('فشل في حذف القطعة. يرجى المحاولة مرة أخرى.');
+            setError('فشل في حذف بعض العناصر. يرجى المحاولة مرة أخرى.');
             console.error(err);
         }
     };
@@ -107,7 +145,23 @@ function ManageInventoryPage() {
 
                 <h2 className="mb-4">إدارة المخزون</h2>
                 <Card className="mb-4">
-                    <Card.Header><h5>بحث وتصفية</h5></Card.Header>
+                    <Card.Header>
+                        <div className="d-flex justify-content-between align-items-center">
+                            <h5>بحث وتصفية</h5>
+                            {/* --- زر الحذف المتعدد يظهر فقط عند وجود تحديد --- */}
+                            {selectedIds.size > 0 && (
+                                <Button 
+                                    variant="danger" 
+                                    onClick={() => {
+                                        const items = filteredItems.filter(i => selectedIds.has(i._id));
+                                        handleShowConfirmModal(items);
+                                    }}
+                                >
+                                    حذف المحدد ({selectedIds.size})
+                                </Button>
+                            )}
+                        </div>
+                    </Card.Header>
                     <Card.Body>
                         <Row>
                             <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}</Form.Select></Form.Group></Col>
@@ -121,26 +175,53 @@ function ManageInventoryPage() {
                 <Table striped bordered hover responsive>
                     <thead>
                         <tr>
+                            {/* --- خانة تحديد الكل --- */}
+                            <th style={{width: '40px'}}>
+                                <Form.Check 
+                                    type="checkbox"
+                                    onChange={handleSelectAll}
+                                    checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
+                                />
+                            </th>
                             <th>#</th><th>المرحلة</th><th>نوع الزي</th><th>المقاس</th><th>الباركود</th><th>تاريخ ووقت الإضافة</th><th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredItems.map((item, index) => (
                             <tr key={item._id}>
+                                <td>
+                                    {/* --- خانة تحديد العنصر --- */}
+                                    <Form.Check 
+                                        type="checkbox"
+                                        checked={selectedIds.has(item._id)}
+                                        onChange={() => handleSelectOne(item._id)}
+                                    />
+                                </td>
                                 <td>{index + 1}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td><td>{item.barcode}</td>
-                                {/* --- تم التعديل هنا --- */}
                                 <td>{new Date(item.entryDate).toLocaleString('ar-SA')}</td>
-                                <td><Button variant="danger" size="sm" onClick={() => handleShowConfirmModal(item)}>حذف</Button></td>
+                                <td><Button variant="outline-danger" size="sm" onClick={() => handleShowConfirmModal([item])}>حذف</Button></td>
                             </tr>
                         ))}
                     </tbody>
                 </Table>
             </Container>
 
+            {/* --- مودال التأكيد المحدث --- */}
             <Modal show={showConfirmModal} onHide={handleCloseConfirmModal} centered>
-                <Modal.Header closeButton><Modal.Title>تأكيد الحذف</Modal.Title></Modal.Header>
-                <Modal.Body>هل أنت متأكد من رغبتك في حذف هذه القطعة بشكل نهائي؟<br /><strong>الباركود: {itemToDelete?.barcode}</strong></Modal.Body>
-                <Modal.Footer><Button variant="secondary" onClick={handleCloseConfirmModal}>إلغاء</Button><Button variant="danger" onClick={handleDeleteItem}>تأكيد الحذف</Button></Modal.Footer>
+                <Modal.Header closeButton className="bg-danger text-white">
+                    <Modal.Title>تأكيد الحذف</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>هل أنت متأكد من رغبتك في حذف <strong>{itemsToDelete.length}</strong> عنصر/عناصر؟</p>
+                    {itemsToDelete.length === 1 && (
+                         <p>الباركود: <strong>{itemsToDelete[0].barcode}</strong></p>
+                    )}
+                    <Alert variant="warning">لا يمكن التراجع عن هذا الإجراء.</Alert>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCloseConfirmModal}>إلغاء</Button>
+                    <Button variant="danger" onClick={handleDeleteConfirmed}>تأكيد الحذف النهائي</Button>
+                </Modal.Footer>
             </Modal>
         </>
     );
