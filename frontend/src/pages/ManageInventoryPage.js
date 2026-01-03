@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Table, Button, Spinner, Alert, Modal, Card, Form, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
+// تأكد من أن مسار هذا المكون صحيح في مشروعك
 import BarcodeScanner from '../components/BarcodeScanner';
 
 function ManageInventoryPage() {
@@ -18,6 +19,7 @@ function ManageInventoryPage() {
     // حالات التحديد المتعدد
     const [selectedIds, setSelectedIds] = useState(new Set());
 
+    // eslint-disable-next-line no-unused-vars
     const [showScanner, setShowScanner] = useState(false);
 
     // إعداد axios مع التوكن
@@ -26,15 +28,17 @@ function ManageInventoryPage() {
         return { headers: { 'x-auth-token': token } };
     };
 
-    const API_URL = 'http://localhost:5001'; 
+    // --- التعديل هنا: استخدام متغير البيئة للرابط ---
+    // سيقوم بقراءة الرابط من إعدادات فيرسل، وإذا لم يجده سيستخدم اللوكال هوست
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
 
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                // استخدام axios مباشرة مع الرابط الكامل
+                // استخدام axios مع الرابط الديناميكي
                 const response = await axios.get(`${API_URL}/api/inventory?status=in_stock`, getAuthHeader());
                 const data = response.data;
-                // إضافة dateAdded إذا لم يكن موجوداً
+                
                 const processedData = data.map(item => ({
                     ...item,
                     entryDate: item.entryDate || new Date().toISOString()
@@ -50,13 +54,14 @@ function ManageInventoryPage() {
                 setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
             } catch (err) {
                 console.error("Error fetching items:", err);
-                setError('فشل في تحميل بيانات المخزون.');
+                setError('فشل في تحميل بيانات المخزون. تأكد من تشغيل السيرفر.');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // الفلترة
@@ -66,7 +71,7 @@ function ManageInventoryPage() {
         if (filters.type !== 'all') result = result.filter(item => item.uniform?.type === filters.type);
         if (filters.size !== 'all') result = result.filter(item => item.uniform?.size === filters.size);
         setFilteredItems(result);
-        setSelectedIds(new Set()); // إعادة تعيين التحديد عند الفلترة
+        setSelectedIds(new Set()); 
     }, [filters, allItems]);
 
 
@@ -105,11 +110,9 @@ function ManageInventoryPage() {
 
     const handleDeleteItems = async () => {
         try {
-            // حذف العناصر المتعددة
             const deletePromises = itemsToDelete.map(item => axios.delete(`${API_URL}/api/inventory/${item._id}`, getAuthHeader()));
             await Promise.all(deletePromises);
 
-            // تحديث الواجهة
             const deletedIds = new Set(itemsToDelete.map(i => i._id));
             setAllItems(prev => prev.filter(item => !deletedIds.has(item._id)));
             setSelectedIds(new Set());
@@ -132,7 +135,6 @@ function ManageInventoryPage() {
                         <Row className="align-items-center">
                             <Col><h3>إدارة المخزون ({filteredItems.length})</h3></Col>
                             <Col xs="auto">
-                                {/* زر الحذف الجماعي */}
                                 {selectedIds.size > 0 && (
                                     <Button 
                                         variant="danger" 
