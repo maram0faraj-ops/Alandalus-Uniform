@@ -1,98 +1,97 @@
 import React, { useState } from 'react';
-import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '../api';
-import logo from '../assets/images/logo1.png';
+import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom'; // افترض أنك تستخدم react-router
+import api from '../api'; // افترض أن لديك هذا الملف للاتصال بالسيرفر
 
-function LoginPage() {
+function LoginPage({ setAuth }) { // setAuth هي دالة لتحديث حالة تسجيل الدخول في App.js
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
-  };
+  const { email, password } = formData;
 
-  const handleSubmit = async (e) => {
+  const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const onSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    
     try {
-      const response = await api.post('/api/auth/login', formData);
+      // استبدل هذا المسار بمسار تسجيل الدخول الخاص بك في السيرفر
+      // const res = await api.post('/api/auth/login', formData);
       
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      const userRole = response.data.user.role;
-
-      // Conditional redirection based on the user's role
-      if (userRole === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (userRole === 'staff') { // ✅ **Correction Made Here**
-        navigate('/staff/deliver');
-      } else if (userRole === 'parent') {
-        // Example: Redirect parents to a specific dashboard
-        navigate('/admin/dashboard'); // Or a future parent dashboard
-      } else {
-        // Fallback for any other roles
-        navigate('/'); 
-      }
+      // محاكاة تسجيل دخول ناجح (لغرض العرض فقط، قم بتفعيل السطر أعلاه في الواقع)
+      console.log("Logging in...");
+      // localStorage.setItem('token', res.data.token);
+      // setAuth(true);
+      // navigate('/dashboard'); // التوجيه إلى لوحة التحكم
 
     } catch (err) {
-      const errorMsg = err.response?.data?.msg || 'فشل تسجيل الدخول. يرجى التحقق من البيانات.';
-      setError(errorMsg);
+      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container className="mt-5">
-      <Row className="justify-content-md-center">
-        <Col md={6}>
-          <div className="text-center mb-4">
-            <img src={logo} alt="Al Andalus Schools Logo" style={{ width: '150px' }} />
-          </div>
+    <div className="login-background">
+      <Container>
+        <Row className="justify-content-center">
+          <Col md={6} lg={5} xl={4}>
+            <Card className="login-card">
+              <div className="login-header">
+                {/* ضع مسار شعار المدرسة هنا */}
+                <img src="/logo.png" alt="School Logo" className="login-logo" onError={(e) => e.target.style.display='none'} />
+                <h4 className="mb-0 fw-bold">نظام الزي المدرسي</h4>
+                <small>مدارس الأندلس الأهلية</small>
+              </div>
+              <Card.Body className="p-4">
+                <h5 className="text-center text-muted mb-4">تسجيل الدخول</h5>
+                
+                {error && <Alert variant="danger" className="text-center">{error}</Alert>}
+                
+                <Form onSubmit={onSubmit}>
+                  <Form.Group className="mb-3" controlId="formBasicEmail">
+                    <Form.Label className="fw-bold text-secondary">البريد الإلكتروني</Form.Label>
+                    <Form.Control 
+                      type="email" 
+                      placeholder="name@alandalus.edu.sa" 
+                      name="email"
+                      value={email}
+                      onChange={onChange}
+                      required
+                    />
+                  </Form.Group>
 
-          <h2 className="text-center mb-4">تسجيل الدخول للنظام</h2>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>البريد الإلكتروني</Form.Label>
-              <Form.Control 
-                type="email" 
-                name="email" 
-                value={formData.email} 
-                onChange={handleChange} 
-                required 
-                placeholder="ادخل البريد الإلكتروني"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>كلمة المرور</Form.Label>
-              <Form.Control 
-                type="password" 
-                name="password" 
-                value={formData.password} 
-                onChange={handleChange} 
-                required 
-                placeholder="كلمة المرور"
-              />
-            </Form.Group>
-            <div className="d-grid">
-              <Button variant="primary" type="submit" disabled={loading}>
-                {loading ? 'جاري الدخول...' : 'دخول'}
-              </Button>
-            </div>
-          </Form>
-          <p className="mt-3 text-center">
-            ليس لديك حساب؟ <Link to="/register">أنشئ حساباً جديداً</Link>
-          </p>
-        </Col>
-      </Row>
-    </Container>
+                  <Form.Group className="mb-4" controlId="formBasicPassword">
+                    <Form.Label className="fw-bold text-secondary">كلمة المرور</Form.Label>
+                    <Form.Control 
+                      type="password" 
+                      placeholder="********" 
+                      name="password"
+                      value={password}
+                      onChange={onChange}
+                      required
+                    />
+                  </Form.Group>
+
+                  <div className="d-grid gap-2">
+                    <Button variant="primary" size="lg" type="submit" disabled={loading}>
+                      {loading ? <Spinner as="span" animation="border" size="sm" /> : 'دخول النظام'}
+                    </Button>
+                  </div>
+                </Form>
+              </Card.Body>
+              <Card.Footer className="text-center bg-light py-3 border-0">
+                <small className="text-muted">جميع الحقوق محفوظة © 2026 مدارس الأندلس</small>
+              </Card.Footer>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 }
 
