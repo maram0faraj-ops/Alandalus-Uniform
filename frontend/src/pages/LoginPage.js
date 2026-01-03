@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom'; // افترض أنك تستخدم react-router
-import api from '../api'; // افترض أن لديك هذا الملف للاتصال بالسيرفر
+import { useNavigate } from 'react-router-dom';
+import api from '../api'; // تأكد أن هذا الملف موجود ويحتوي على إعدادات axios
 
-function LoginPage({ setAuth }) { // setAuth هي دالة لتحديث حالة تسجيل الدخول في App.js
+function LoginPage({ setAuth }) { 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,17 +19,26 @@ function LoginPage({ setAuth }) { // setAuth هي دالة لتحديث حالة
     setError('');
     
     try {
-      // استبدل هذا المسار بمسار تسجيل الدخول الخاص بك في السيرفر
-      // const res = await api.post('/api/auth/login', formData);
+      // --- هنا يتم الاتصال الفعلي بالسيرفر ---
+      const res = await api.post('/api/auth/login', formData);
       
-      // محاكاة تسجيل دخول ناجح (لغرض العرض فقط، قم بتفعيل السطر أعلاه في الواقع)
-      console.log("Logging in...");
-      // localStorage.setItem('token', res.data.token);
-      // setAuth(true);
-      // navigate('/dashboard'); // التوجيه إلى لوحة التحكم
+      // 1. تخزين التوكن
+      localStorage.setItem('token', res.data.token);
+      
+      // 2. تحديث حالة التطبيق بأن المستخدم مسجل دخول
+      if (setAuth) {
+          setAuth(true);
+      }
+      
+      // 3. التوجيه للوحة التحكم
+      navigate('/admin/dashboard'); 
 
     } catch (err) {
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      console.error(err);
+      setError(
+          err.response?.data?.msg || 
+          'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+      );
     } finally {
       setLoading(false);
     }
@@ -42,9 +51,18 @@ function LoginPage({ setAuth }) { // setAuth هي دالة لتحديث حالة
           <Col md={6} lg={5} xl={4}>
             <Card className="login-card">
               <div className="login-header">
-                {/* ضع مسار شعار المدرسة هنا */}
-                <img src="/logo.png" alt="School Logo" className="login-logo" onError={(e) => e.target.style.display='none'} />
-                <h4 className="mb-0 fw-bold">نظام الزي المدرسي</h4>
+                {/* تأكد من وضع صورة باسم logo.png في مجلد public */}
+                <img 
+                    src="/logo.png" 
+                    alt="شعار المدرسة" 
+                    className="login-logo" 
+                    // هذا السطر يخفي الصورة إذا لم يجدها لكي لا يظهر رمز خطأ قبيح
+                    onError={(e) => {
+                        e.target.onerror = null; 
+                        e.target.style.display = 'none';
+                    }} 
+                />
+                <h4 className="mb-0 fw-bold mt-2">نظام الزي المدرسي</h4>
                 <small>مدارس الأندلس الأهلية</small>
               </div>
               <Card.Body className="p-4">
@@ -62,6 +80,7 @@ function LoginPage({ setAuth }) { // setAuth هي دالة لتحديث حالة
                       value={email}
                       onChange={onChange}
                       required
+                      autoFocus
                     />
                   </Form.Group>
 
