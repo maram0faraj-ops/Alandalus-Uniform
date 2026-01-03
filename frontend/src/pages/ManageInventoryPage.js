@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Table, Button, Spinner, Alert, Modal, Card, Form, Row, Col } from 'react-bootstrap';
-import axios from 'axios';
-// تأكد من أن مسار هذا المكون صحيح في مشروعك
+import api from '../api';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 function ManageInventoryPage() {
@@ -11,163 +10,110 @@ function ManageInventoryPage() {
     const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    
-    // حالات الحذف
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [itemsToDelete, setItemsToDelete] = useState([]); 
-    
-    // حالات التحديد المتعدد
-    const [selectedIds, setSelectedIds] = useState(new Set());
-
-    // eslint-disable-next-line no-unused-vars
+    const [itemToDelete, setItemToDelete] = useState(null);
     const [showScanner, setShowScanner] = useState(false);
-
-    // إعداد axios مع التوكن
-    const getAuthHeader = () => {
-        const token = localStorage.getItem('token');
-        return { headers: { 'x-auth-token': token } };
-    };
-
-    // --- التعديل هنا: استخدام متغير البيئة للرابط ---
-    // سيقوم بقراءة الرابط من إعدادات فيرسل، وإذا لم يجده سيستخدم اللوكال هوست
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
 
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                // استخدام axios مع الرابط الديناميكي
-                const response = await axios.get(`${API_URL}/api/inventory?status=in_stock`, getAuthHeader());
+                const response = await api.get('/api/inventory?status=in_stock');
                 const data = response.data;
-                
-                const processedData = data.map(item => ({
-                    ...item,
-                    entryDate: item.entryDate || new Date().toISOString()
-                }));
-                
-                setAllItems(processedData);
-                setFilteredItems(processedData);
-                
-                const uniqueStages = [...new Set(processedData.map(item => item.uniform?.stage).filter(Boolean))];
-                const uniqueTypes = [...new Set(processedData.map(item => item.uniform?.type).filter(Boolean))];
-                const uniqueSizes = [...new Set(processedData.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
-                
+                setAllItems(data);
+                setFilteredItems(data);
+                const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))];
+                const uniqueTypes = [...new Set(data.map(item => item.uniform?.type).filter(Boolean))];
+                const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
                 setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
             } catch (err) {
-                console.error("Error fetching items:", err);
-                setError('فشل في تحميل بيانات المخزون. تأكد من تشغيل السيرفر.');
+                setError('فشل في جلب بيانات المخزون.');
             } finally {
                 setLoading(false);
             }
         };
-
         fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // الفلترة
     useEffect(() => {
         let result = allItems;
-        if (filters.stage !== 'all') result = result.filter(item => item.uniform?.stage === filters.stage);
-        if (filters.type !== 'all') result = result.filter(item => item.uniform?.type === filters.type);
-        if (filters.size !== 'all') result = result.filter(item => item.uniform?.size === filters.size);
+        if (filters.stage !== 'all') {
+            result = result.filter(item => item.uniform?.stage === filters.stage);
+        }
+        if (filters.type !== 'all') {
+            result = result.filter(item => item.uniform?.type === filters.type);
+        }
+        if (filters.size !== 'all') {
+            result = result.filter(item => item.uniform?.size === Number(filters.size));
+        }
         setFilteredItems(result);
-        setSelectedIds(new Set()); 
     }, [filters, allItems]);
 
-
-    // --- دوال التحديد المتعدد ---
-
-    const handleSelectOne = (id) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
+    const handleScanSuccess = (scannedBarcode) => {
+        setShowScanner(false);
+        const itemFound = allItems.find(item => item.barcode === scannedBarcode);
+        if (itemFound) {
+            handleShowConfirmModal(itemFound);
         } else {
-            newSelected.add(id);
-        }
-        setSelectedIds(newSelected);
-    };
-
-    const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            const allIds = filteredItems.map(item => item._id);
-            setSelectedIds(new Set(allIds));
-        } else {
-            setSelectedIds(new Set());
+            setError('الباركود غير موجود في المخزون الحالي.');
         }
     };
 
-    // --- دوال الحذف ---
+    const handleScanError = (err) => {
+        setShowScanner(false);
+        setError('فشل في قراءة الباركود، يرجى المحاولة مرة أخرى.');
+        console.error(err);
+    };
 
-    const handleShowDeleteConfirm = (items = []) => {
-        setItemsToDelete(items);
+    const handleFilterChange = (e) => {
+        setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleShowConfirmModal = (item) => {
+        setItemToDelete(item);
         setShowConfirmModal(true);
     };
 
     const handleCloseConfirmModal = () => {
+        setItemToDelete(null);
         setShowConfirmModal(false);
-        setItemsToDelete([]);
     };
 
-    const handleDeleteItems = async () => {
+    const handleDeleteItem = async () => {
+        if (!itemToDelete) return;
         try {
-            const deletePromises = itemsToDelete.map(item => axios.delete(`${API_URL}/api/inventory/${item._id}`, getAuthHeader()));
-            await Promise.all(deletePromises);
-
-            const deletedIds = new Set(itemsToDelete.map(i => i._id));
-            setAllItems(prev => prev.filter(item => !deletedIds.has(item._id)));
-            setSelectedIds(new Set());
-            
+            await api.delete(`/api/inventory/${itemToDelete._id}`);
+            setAllItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
+            setFilteredItems(currentItems => currentItems.filter(item => item._id !== itemToDelete._id));
             handleCloseConfirmModal();
         } catch (err) {
-            console.error("Error deleting items:", err);
-            alert('حدث خطأ أثناء عملية الحذف.');
+            setError('فشل في حذف القطعة. يرجى المحاولة مرة أخرى.');
+            console.error(err);
         }
     };
 
-    if (loading) return <Container className="text-center mt-5"><Spinner animation="border" variant="primary" /></Container>;
-    if (error) return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
+    if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
 
     return (
         <>
-            <Container className="mt-4">
-                <Card className="mb-4 shadow-sm">
+            <Container className="mt-5">
+                {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+                
+                {showScanner && (
+                    <Modal show={showScanner} onHide={() => setShowScanner(false)} centered>
+                        <Modal.Header closeButton><Modal.Title>امسح الباركود للحذف</Modal.Title></Modal.Header>
+                        <Modal.Body><BarcodeScanner onScanSuccess={handleScanSuccess} onScanError={handleScanError} /></Modal.Body>
+                    </Modal>
+                )}
+
+                <h2 className="mb-4">إدارة المخزون</h2>
+                <Card className="mb-4">
+                    <Card.Header><h5>بحث وتصفية</h5></Card.Header>
                     <Card.Body>
-                        <Row className="align-items-center">
-                            <Col><h3>إدارة المخزون ({filteredItems.length})</h3></Col>
-                            <Col xs="auto">
-                                {selectedIds.size > 0 && (
-                                    <Button 
-                                        variant="danger" 
-                                        onClick={() => {
-                                            const items = filteredItems.filter(i => selectedIds.has(i._id));
-                                            handleShowDeleteConfirm(items);
-                                        }}
-                                        className="me-2"
-                                    >
-                                        حذف المحدد ({selectedIds.size})
-                                    </Button>
-                                )}
-                            </Col>
-                        </Row>
-                         <Row className="mt-3">
-                            <Col md={3}>
-                                <Form.Select value={filters.stage} onChange={(e) => setFilters({...filters, stage: e.target.value})}>
-                                    <option value="all">كل المراحل</option>
-                                    {filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Select value={filters.type} onChange={(e) => setFilters({...filters, type: e.target.value})}>
-                                    <option value="all">كل الأنواع</option>
-                                    {filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
-                                </Form.Select>
-                            </Col>
-                             <Col md={3}>
-                                <Form.Select value={filters.size} onChange={(e) => setFilters({...filters, size: e.target.value})}>
-                                    <option value="all">كل المقاسات</option>
-                                    {filterOptions.sizes.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Col>
+                        <Row>
+                            <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}</Form.Select></Form.Group></Col>
+                            <Col md={3}><Form.Group><Form.Label>نوع الزي</Form.Label><Form.Select name="type" value={filters.type} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.types.map(type => <option key={type} value={type}>{type}</option>)}</Form.Select></Form.Group></Col>
+                            <Col md={3}><Form.Group><Form.Label>المقاس</Form.Label><Form.Select name="size" value={filters.size} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.sizes.map(size => <option key={size} value={size}>{size}</option>)}</Form.Select></Form.Group></Col>
+                            <Col md={3} className="d-flex align-items-end"><Button variant="primary" className="w-100" onClick={() => setShowScanner(true)}>📸 مسح باركود للحذف</Button></Col>
                         </Row>
                     </Card.Body>
                 </Card>
@@ -175,47 +121,16 @@ function ManageInventoryPage() {
                 <Table striped bordered hover responsive>
                     <thead>
                         <tr>
-                            <th style={{width: '40px'}}>
-                                <Form.Check 
-                                    type="checkbox" 
-                                    onChange={handleSelectAll}
-                                    checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
-                                />
-                            </th>
-                            <th>#</th>
-                            <th>المرحلة</th>
-                            <th>نوع الزي</th>
-                            <th>المقاس</th>
-                            <th>الباركود</th>
-                            <th>تاريخ الإضافة</th>
-                            <th>إجراءات</th>
+                            <th>#</th><th>المرحلة</th><th>نوع الزي</th><th>المقاس</th><th>الباركود</th><th>تاريخ ووقت الإضافة</th><th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredItems.map((item, index) => (
                             <tr key={item._id}>
-                                <td>
-                                    <Form.Check 
-                                        type="checkbox" 
-                                        checked={selectedIds.has(item._id)}
-                                        onChange={() => handleSelectOne(item._id)}
-                                    />
-                                </td>
-                                <td>{index + 1}</td>
-                                <td>{item.uniform?.stage}</td>
-                                <td>{item.uniform?.type}</td>
-                                <td>{item.uniform?.size}</td>
-                                <td>{item.barcode}</td>
+                                <td>{index + 1}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td><td>{item.barcode}</td>
+                                {/* --- تم التعديل هنا --- */}
                                 <td>{new Date(item.entryDate).toLocaleString('ar-SA')}</td>
-                                <td>
-                                    <Button 
-                                        variant="outline-danger" 
-                                        size="sm" 
-                                        onClick={() => handleShowDeleteConfirm([item])}
-                                    >
-                                        حذف
-                                    </Button>
-                                </td>
+                                <td><Button variant="danger" size="sm" onClick={() => handleShowConfirmModal(item)}>حذف</Button></td>
                             </tr>
                         ))}
                     </tbody>
@@ -223,20 +138,9 @@ function ManageInventoryPage() {
             </Container>
 
             <Modal show={showConfirmModal} onHide={handleCloseConfirmModal} centered>
-                <Modal.Header closeButton className="bg-danger text-white">
-                    <Modal.Title>تأكيد الحذف</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>هل أنت متأكد من رغبتك في حذف <strong>{itemsToDelete.length}</strong> عنصر/عناصر من المخزون؟</p>
-                    {itemsToDelete.length === 1 && (
-                        <p>الباركود: <strong>{itemsToDelete[0].barcode}</strong></p>
-                    )}
-                    <Alert variant="warning">لا يمكن التراجع عن هذا الإجراء.</Alert>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseConfirmModal}>إلغاء</Button>
-                    <Button variant="danger" onClick={handleDeleteItems}>تأكيد الحذف النهائي</Button>
-                </Modal.Footer>
+                <Modal.Header closeButton><Modal.Title>تأكيد الحذف</Modal.Title></Modal.Header>
+                <Modal.Body>هل أنت متأكد من رغبتك في حذف هذه القطعة بشكل نهائي؟<br /><strong>الباركود: {itemToDelete?.barcode}</strong></Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={handleCloseConfirmModal}>إلغاء</Button><Button variant="danger" onClick={handleDeleteItem}>تأكيد الحذف</Button></Modal.Footer>
             </Modal>
         </>
     );
