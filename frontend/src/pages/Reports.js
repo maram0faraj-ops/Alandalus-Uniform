@@ -8,7 +8,7 @@ function Reports() {
     stage: '',
     grade: '',
     section: '',
-    paymentType: '', // حقل جديد
+    paymentType: '', 
     deliveryDateFrom: '',
     deliveryDateTo: ''
   });
@@ -37,8 +37,14 @@ function Reports() {
         try {
             const response = await api.get('/api/uniforms/options');
             const { stages, types, sizes } = response.data;
-            setStageOptions(stages.sort());
-            setTypeOptions(types.sort());
+            
+            // --- التعديل هنا: تنظيف البيانات وإزالة التكرار ---
+            const uniqueStages = [...new Set(stages.map(s => s.trim()))].sort();
+            const uniqueTypes = [...new Set(types.map(t => t.trim()))].sort();
+            // ---------------------------------------------
+            
+            setStageOptions(uniqueStages);
+            setTypeOptions(uniqueTypes);
             setSizeOptions(sizes.sort((a, b) => a - b));
         } catch (error) {
             console.error('Failed to fetch filter options:', error);
