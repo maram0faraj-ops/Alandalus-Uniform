@@ -2,29 +2,30 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-// لاحظ: نستدعي ملف الحماية من مجلد middleware وليس routes
+// استيراد الميدلوير من مجلد middleware (تأكد من وجود الملف هناك)
 const auth = require('../middleware/auth'); 
 const User = require('../models/User');
 
-// 1. رابط تسجيل الدخول (هذا هو الكود الذي كان مفقوداً)
+// @route   POST /api/auth/login
+// @desc    تسجيل الدخول وإصدار التوكن (هذا هو الجزء المفقود)
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // البحث عن المستخدم وتحويل البريد لحروف صغيرة
+        // 1. التحقق من وجود المستخدم (مع تحويل البريد لحروف صغيرة)
         let user = await User.findOne({ email: email.toLowerCase() });
         
         if (!user) {
             return res.status(400).json({ msg: 'البريد الإلكتروني غير مسجل' });
         }
 
-        // مطابقة كلمة المرور
+        // 2. التحقق من صحة كلمة المرور
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ msg: 'كلمة المرور غير صحيحة' });
         }
 
-        // إنشاء التوكن
+        // 3. إنشاء التوكن (JWT)
         const payload = {
             user: {
                 id: user.id,
@@ -38,6 +39,7 @@ router.post('/login', async (req, res) => {
             { expiresIn: '12h' }, 
             (err, token) => {
                 if (err) throw err;
+                // إرسال التوكن والدور للمتصفح
                 res.json({ token, role: user.role });
             }
         );
@@ -48,7 +50,8 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 2. رابط التحقق من المستخدم الحالي
+// @route   GET /api/auth
+// @desc    التحقق من المستخدم الحالي
 router.get('/', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
