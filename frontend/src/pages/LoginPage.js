@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import api from '../api'; // تأكد أن هذا الملف موجود ويحتوي على إعدادات axios
+import api from '../api'; 
 
 function LoginPage({ setAuth }) { 
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -19,26 +19,34 @@ function LoginPage({ setAuth }) {
     setError('');
     
     try {
-      // --- هنا يتم الاتصال الفعلي بالسيرفر ---
+      // إرسال طلب الدخول
       const res = await api.post('/api/auth/login', formData);
       
-      // 1. تخزين التوكن
+      // 1. تخزين التوكن والدور في المتصفح
       localStorage.setItem('token', res.data.token);
-      
-      // 2. تحديث حالة التطبيق بأن المستخدم مسجل دخول
+      localStorage.setItem('role', res.data.role); // مفيد للتحقق لاحقاً
+
+      // 2. تحديث حالة الدخول في التطبيق
       if (setAuth) {
           setAuth(true);
       }
       
-      // 3. التوجيه للوحة التحكم
-      navigate('/admin/dashboard'); 
+      // 3. التوجيه الذكي حسب الصلاحية (هذا هو الحل لمشكلتك)
+      const userRole = res.data.role;
+      
+      if (userRole === 'admin') {
+          console.log("Redirecting to Admin Dashboard...");
+          navigate('/admin/dashboard'); // نقل الأدمن للوحة التحكم
+      } else if (userRole === 'staff') {
+          navigate('/delivery'); // نقل الموظفين لصفحة التسليم
+      } else {
+          navigate('/'); // الصفحة الافتراضية للبقية
+      }
 
     } catch (err) {
-      console.error(err);
-      setError(
-          err.response?.data?.msg || 
-          'البريد الإلكتروني أو كلمة المرور غير صحيحة'
-      );
+      console.error("Login Error:", err);
+      const backendMsg = err.response?.data?.msg || 'فشل تسجيل الدخول. تأكد من البيانات.';
+      setError(backendMsg);
     } finally {
       setLoading(false);
     }
@@ -51,16 +59,12 @@ function LoginPage({ setAuth }) {
           <Col md={6} lg={5} xl={4}>
             <Card className="login-card">
               <div className="login-header">
-                {/* تأكد من وضع صورة باسم logo.png في مجلد public */}
+                {/* تأكد من وجود صورة logo.png في مجلد public */}
                 <img 
                     src="/logo.png" 
                     alt="شعار المدرسة" 
                     className="login-logo" 
-                    // هذا السطر يخفي الصورة إذا لم يجدها لكي لا يظهر رمز خطأ قبيح
-                    onError={(e) => {
-                        e.target.onerror = null; 
-                        e.target.style.display = 'none';
-                    }} 
+                    onError={(e) => { e.target.style.display = 'none'; }} 
                 />
                 <h4 className="mb-0 fw-bold mt-2">نظام الزي المدرسي</h4>
                 <small>مدارس الأندلس الأهلية</small>
@@ -75,7 +79,7 @@ function LoginPage({ setAuth }) {
                     <Form.Label className="fw-bold text-secondary">البريد الإلكتروني</Form.Label>
                     <Form.Control 
                       type="email" 
-                      placeholder="name@alandalus.edu.sa" 
+                      placeholder="admin@alandalus.com" 
                       name="email"
                       value={email}
                       onChange={onChange}
