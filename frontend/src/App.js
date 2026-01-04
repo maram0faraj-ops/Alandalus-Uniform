@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
 // استيراد المكونات والصفحات
@@ -13,16 +13,53 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import Reports from './pages/Reports';
 import InventoryReportPage from './pages/InventoryReportPage';
-import ManageInventoryPage from './pages/ManageInventoryPage'; // <-- تأكد من استيراد الصفحة الجديدة
+import ManageInventoryPage from './pages/ManageInventoryPage';
 
 function App() {
+  // 1. حالة للتحقق من تسجيل الدخول
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // 2. التحقق من التوكن عند فتح الموقع
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, []);
+
+  // دالة لتحديث الحالة عند تسجيل الدخول
+  const setAuth = (boolean) => {
+    setIsAuthenticated(boolean);
+  };
+
+  if (loading) {
+    return <div className="text-center mt-5">جاري التحميل...</div>;
+  }
+
   return (
     <Router>
       <div className="App">
         <Routes>
 
           {/* المسارات العامة */}
-          <Route path="/login" element={<LoginPage />} />
+          
+          {/* تعديل هام: إذا كان مسجل دخول، يذهب للداشبورد، وإلا يذهب لصفحة الدخول */}
+          <Route 
+            path="/login" 
+            element={
+              !isAuthenticated ? 
+              <LoginPage setAuth={setAuth} /> : 
+              <Navigate to="/admin/dashboard" />
+            } 
+          />
+          
           <Route path="/register" element={<RegisterPage />} />
 
           {/* صفحات الأدمن (محمية) */}
@@ -34,7 +71,7 @@ function App() {
             path="/admin/add-stock" 
             element={<AdminRoute><AdminLayout><AddStockPage /></AdminLayout></AdminRoute>} 
           />
-          {/* --- المسار الجديد لصفحة إدارة المخزون --- */}
+          
           <Route 
             path="/admin/manage-inventory" 
             element={<AdminRoute><AdminLayout><ManageInventoryPage /></AdminLayout></AdminRoute>} 
@@ -58,8 +95,14 @@ function App() {
              element={<PrivateRoute><AdminLayout><DeliverUniformPage /></AdminLayout></PrivateRoute>} 
           />
           
-          {/* المسار الافتراضي */}
-          <Route path="*" element={<Navigate to="/login" />} />
+          {/* الصفحة الرئيسية: توجهك حسب حالتك */}
+          <Route 
+            path="/" 
+            element={isAuthenticated ? <Navigate to="/admin/dashboard" /> : <Navigate to="/login" />} 
+          />
+
+          {/* أي رابط خطأ يوجهك للرئيسية */}
+          <Route path="*" element={<Navigate to="/" />} />
 
         </Routes>
        </div>
@@ -67,4 +110,4 @@ function App() {
   );
 }
 
- export default App;
+export default App;
