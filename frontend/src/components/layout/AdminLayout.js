@@ -2,6 +2,10 @@ import React from 'react';
 import { Container, Navbar, Nav, Button } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
 
+// --- هام جداً: استيراد الشعار من المسار الصحيح ---
+// تأكد أن الاسم يطابق اسم الملف لديك (logo1.png أو logo2.png)
+import logoImage from '../../assets/images/logo1.png'; 
+
 const AdminLayout = ({ children }) => {
     const location = useLocation();
     const role = localStorage.getItem('role');
@@ -20,21 +24,28 @@ const AdminLayout = ({ children }) => {
             {role === 'admin' && (
                 <Navbar bg="dark" variant="dark" expand="lg" className="px-4 shadow-sm mb-4">
                     <Container fluid>
-                        {/* --- التعديل الأول: وضع الشعار بدلاً من الدرع --- */}
+                        {/* الشعار واسم النظام */}
                         <Navbar.Brand as={Link} to="/admin/dashboard" className="fw-bold text-warning d-flex align-items-center gap-2">
+                            {/* استخدام المتغير المستورد logoImage */}
                             <img 
-                                src="/logo.png" 
+                                src={logoImage} 
                                 alt="شعار المدرسة" 
-                                style={{ width: '40px', height: '40px', objectFit: 'contain', backgroundColor: 'white', borderRadius: '50%', padding: '2px' }} 
+                                style={{ 
+                                    width: '45px', 
+                                    height: '45px', 
+                                    objectFit: 'contain', 
+                                    backgroundColor: 'white', 
+                                    borderRadius: '50%', 
+                                    padding: '2px' 
+                                }}
                             />
-                            <span>نظام الزي المدرسي</span>
+                            <span className="me-2">نظام الزي المدرسي</span>
                         </Navbar.Brand>
                         
                         <Navbar.Toggle aria-controls="navbar-menu" />
                         
                         <Navbar.Collapse id="navbar-menu">
                             <Nav className="me-auto my-2 my-lg-0" style={{ maxHeight: '100px' }}>
-                                {/* --- التعديل الثاني: حذف الرموز من النصوص --- */}
                                 <Nav.Link as={Link} to="/admin/dashboard" active={isActive('/admin/dashboard')} className="mx-2">
                                     الإحصائيات
                                 </Nav.Link>
@@ -65,7 +76,6 @@ const AdminLayout = ({ children }) => {
 
             {/* محتوى الصفحة */}
             <Container fluid className="px-4 pb-5">
-                {/* زر خروج للموظف العادي (لأنه لا يرى الشريط العلوي) */}
                 {role !== 'admin' && (
                     <div className="d-flex justify-content-end py-3">
                         <Button variant="outline-danger" size="sm" onClick={handleLogout}>
@@ -73,7 +83,6 @@ const AdminLayout = ({ children }) => {
                         </Button>
                     </div>
                 )}
-
                 {children}
             </Container>
         </div>
