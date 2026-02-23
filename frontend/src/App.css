@@ -1,114 +1,80 @@
-/* App.css المحدث بالكامل لضبط قياسات الطباعة الطولية */
-
+/* App.css المحدث بالكامل لطباعة 4 ملصقات عرضية */
 .App {
   text-align: center;
 }
 
-/* إعدادات الطباعة المتقدمة لمدارس الأندلس */
 @media print {
   @page {
-    size: portrait; /* إجبار المتصفح على الوضع الطولي */
-    margin: 10mm;   /* هوامش الورقة */
+    size: portrait;
+    margin: 5mm;
   }
 
-  /* إخفاء العناصر غير المرغوب بها عند الطباعة */
-  .no-print, 
-  .navbar, 
-  .btn, 
-  .card-header, 
-  .filter-section {
+  .no-print, .hide-on-print {
     display: none !important;
   }
 
-  .printable {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* إجبار الصف على توزيع ملصقين فقط */
   .printable .row {
     display: flex !important;
     flex-wrap: wrap !important;
-    flex-direction: row !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
   }
 
-  /* تنسيق حاوية الملصق (نصف عرض الصفحة) */
+  /* تقسيم العرض ليسمح بـ 4 ملصقات (100% ÷ 4 = 25%) */
   .barcode-wrapper {
-    width: 50% !important; /* لضمان ظهور ملصقين فقط في الصف */
-    padding: 5mm !important;
+    width: 25% !important; 
+    padding: 2mm !important;
     box-sizing: border-box !important;
-    float: left !important; /* دعم المتصفحات القديمة */
   }
 
-  /* تصميم البطاقة الطولية المستطيلة */
   .barcode-card {
     border: 1px solid #000 !important;
-    height: 11cm !important; /* ارتفاع طولي ثابت */
-    width: 100% !important;
+    height: 6.8cm !important; /* ارتفاع متوازن للتوزيع الرباعي */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 10mm !important;
-    page-break-inside: avoid; /* منع انقسام البطاقة بين ورقتين */
+    justify-content: center !important;
+    page-break-inside: avoid;
+    padding: 4mm !important;
     box-sizing: border-box !important;
   }
 
-  .barcode-card .school-name {
-    font-size: 16pt !important;
-    font-weight: bold !important;
-    color: #1a4a7c !important;
-    margin-bottom: 5mm !important;
-  }
-
-  .barcode-card .item-details {
-    font-size: 12pt !important;
-    text-align: center !important;
-    line-height: 1.6 !important;
-    margin-top: 5mm !important;
-  }
-
-  /* مقاس الـ QR Code داخل البطاقة */
   .qr-container svg {
-    width: 6cm !important;
-    height: 6cm !important;
+    width: 3.8cm !important;
+    height: 3.8cm !important;
+  }
+
+  .school-name { 
+    font-size: 10pt !important; 
+    font-weight: bold !important;
+    margin-bottom: 2mm !important;
+  }
+
+  .item-details { 
+    font-size: 8pt !important; 
+    text-align: center !important;
+    margin-top: 2mm !important;
+    line-height: 1.2 !important;
   }
 }
 
-/* --- تنسيق العرض على الشاشة (Preview) --- */
+/* التنسيق على الشاشة */
 .barcode-card {
   border: 1px solid #ddd;
-  padding: 20px;
+  padding: 15px;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   border-radius: 8px;
   background: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  min-height: 380px; /* مظهر طولي */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  min-height: 280px;
 }
 
 .barcode-checkbox {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 10;
-  transform: scale(1.3); /* تكبير المربع لسهولة اللمس */
-}
-
-.school-name {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #1a4a7c;
-}
-
-.item-details {
-  margin-top: 15px;
-  font-size: 0.95rem;
-  color: #333;
+  top: 10px;
+  right: 10px;
 }

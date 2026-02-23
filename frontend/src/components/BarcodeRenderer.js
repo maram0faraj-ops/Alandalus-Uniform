@@ -5,32 +5,14 @@ function BarcodeRenderer({ value }) {
   if (!value) return null;
 
   return (
-    <div 
-      className="qr-code-wrapper" 
-      style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        padding: '10px',
-        backgroundColor: '#fff'
-      }}
-    >
+    <div className="qr-code-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
       <QRCodeSVG 
         value={value} 
-        size={130}       // تم زيادة الحجم ليناسب التصميم الطولي للملصق
-        level={"H"}      // تصحيح أخطاء عالٍ
+        size={110} // حجم مناسب لـ 4 ملصقات في الصف
+        level={"H"}
         includeMargin={false}
       />
-      <div 
-        style={{ 
-          marginTop: '10px', 
-          fontSize: '11px', 
-          fontWeight: 'bold', 
-          fontFamily: 'monospace',
-          color: '#000'
-        }}
-      >
+      <div style={{ marginTop: '5px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'monospace' }}>
         {value}
       </div>
     </div>
