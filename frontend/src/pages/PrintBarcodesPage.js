@@ -68,27 +68,33 @@ function PrintBarcodesPage() {
   return (
     <Container className="mt-4">
       <div className="no-print">
-        <Card className="mb-4 shadow-sm">
-          <Card.Header className="bg-primary text-white"><h5>فلترة ملصقات الزي المدرسي</h5></Card.Header>
-          <Card.Body>
+        <Card className="mb-4 shadow-sm border-0">
+          <Card.Header className="bg-primary text-white py-3">
+            <h5 className="mb-0">تخصيص ملصقات الزي المدرسي</h5>
+          </Card.Header>
+          <Card.Body className="bg-light">
             <Row className="align-items-end">
-              <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}</Form.Select></Form.Group></Col>
-              <Col md={3}><Form.Group><Form.Label>النوع</Form.Label><Form.Select name="type" value={filters.type} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}</Form.Select></Form.Group></Col>
-              <Col md={2}><Form.Group><Form.Label>المقاس</Form.Label><Form.Select name="size" value={filters.size} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.sizes.map(sz => <option key={sz} value={sz}>{sz}</option>)}</Form.Select></Form.Group></Col>
-              <Col md={4}><Form.Group><Form.Label>تاريخ الإضافة</Form.Label><InputGroup><Form.Control type="date" name="entryDate" value={filters.entryDate} onChange={handleFilterChange} /><Button variant="outline-secondary" onClick={() => setFilters({...filters, entryDate: ''})}>مسح</Button></InputGroup></Form.Group></Col>
+              <Col md={3}><Form.Group><Form.Label className="fw-bold">المرحلة</Form.Label><Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}</Form.Select></Form.Group></Col>
+              <Col md={3}><Form.Group><Form.Label className="fw-bold">النوع</Form.Label><Form.Select name="type" value={filters.type} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}</Form.Select></Form.Group></Col>
+              <Col md={2}><Form.Group><Form.Label className="fw-bold">المقاس</Form.Label><Form.Select name="size" value={filters.size} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.sizes.map(sz => <option key={sz} value={sz}>{sz}</option>)}</Form.Select></Form.Group></Col>
+              <Col md={4}><Form.Group><Form.Label className="fw-bold">التاريخ</Form.Label><InputGroup><Form.Control type="date" name="entryDate" value={filters.entryDate} onChange={handleFilterChange} /><Button variant="outline-secondary" onClick={() => setFilters({...filters, entryDate: ''})}>مسح</Button></InputGroup></Form.Group></Col>
             </Row>
           </Card.Body>
         </Card>
-        <div className="d-flex justify-content-between mb-3">
-          <div>
+        <div className="d-flex justify-content-between mb-4">
+          <div className="btn-group">
             <Button variant="outline-primary" size="sm" onClick={handleSelectAll}>تحديد الكل</Button>
             <Button variant="outline-secondary" size="sm" className="ms-2" onClick={handleDeselectAll}>إلغاء التحديد</Button>
           </div>
-          <Button variant="success" onClick={handlePrint} disabled={selectedItems.size === 0}>🖨️ طباعة ({selectedItems.size})</Button>
+          <Button variant="success" className="px-4 shadow-sm" onClick={handlePrint} disabled={selectedItems.size === 0}>
+            🖨️ طباعة المختار ({selectedItems.size})
+          </Button>
         </div>
       </div>
 
-      {loading ? <div className="text-center my-5"><Spinner animation="border" variant="primary" /></div> : (
+      {loading ? (
+        <div className="text-center my-5 py-5"><Spinner animation="border" variant="primary" /></div>
+      ) : (
         <div className="printable">
           <Row className="g-1">
             {filteredItems.map((item) => {
@@ -102,7 +108,7 @@ function PrintBarcodesPage() {
                     <div className="qr-container"><BarcodeRenderer value={item.barcode} /></div>
                     <div className="item-details">
                       <p className="mb-0">{item.uniform.stage} - {item.uniform.type}</p>
-                      <p className="fw-bold mb-0">المقاس: {item.uniform.size}</p>
+                      <p className="fw-bold mb-0 text-dark">المقاس: {item.uniform.size}</p>
                     </div>
                   </div>
                 </Col>

@@ -1,4 +1,4 @@
-/* App.css المحدث بالكامل للطباعة الرباعية الاحترافية */
+/* App.css المحدث بالكامل للطباعة الرباعية */
 .App {
   text-align: center;
 }
@@ -6,15 +6,17 @@
 @media print {
   @page {
     size: portrait;
-    margin: 5mm; /* هوامش ضيقة لاستغلال مساحة ورقة A4 */
+    margin: 5mm; /* هوامش ضيقة لاستغلال مساحة الصفحة */
   }
 
-  /* إخفاء نصوص النظام الزائدة والعناصر غير المطلوبة */
+  /* إخفاء نصوص النظام والعناصر غير المطلوبة تماماً عند الطباعة */
   .no-print, 
   .navbar, 
   h1, h2, h3, h4, h5, 
   .card-header,
-  header {
+  header,
+  .filter-section,
+  .system-title { /* إخفاء أي عنوان للنظام قد يظهر */
     display: none !important;
   }
 
@@ -29,13 +31,13 @@
   /* تقسيم العرض بدقة لـ 4 ملصقات (25% لكل ملصق) */
   .barcode-wrapper {
     width: 25% !important; 
-    padding: 1mm !important; /* تقليل الحشو لزيادة مساحة الـ QR */
+    padding: 1.5mm !important;
     box-sizing: border-box !important;
     float: left !important;
   }
 
   .barcode-card {
-    border: 1px dashed #ccc !important; /* إطار خفيف جداً لتسهيل القص */
+    border: 1px dashed #ccc !important; /* إطار خفيف لتسهيل القص */
     height: 6.5cm !important; /* ارتفاع مثالي للتوزيع الرباعي */
     display: flex !important;
     flex-direction: column !important;
@@ -69,7 +71,7 @@
   }
 }
 
-/* تنسيق العرض على المتصفح */
+/* تنسيق العرض على المتصفح (Preview) */
 .barcode-card {
   border: 1px solid #ddd;
   padding: 15px;
