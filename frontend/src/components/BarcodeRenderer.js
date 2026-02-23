@@ -8,7 +8,7 @@ function BarcodeRenderer({ value }) {
     <div className="qr-code-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
       <QRCodeSVG 
         value={value} 
-        size={110} // حجم مناسب لـ 4 ملصقات في الصف
+        size={135} // مقاس مثالي لـ 4 ملصقات في الصف الواحد
         level={"H"}
         includeMargin={false}
       />

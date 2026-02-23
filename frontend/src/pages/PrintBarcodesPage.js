@@ -30,7 +30,7 @@ function PrintBarcodesPage() {
         
         setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
       } catch (err) {
-        console.error('Error fetching inventory data');
+        console.error('Error fetching inventory');
       } finally {
         setLoading(false);
       }

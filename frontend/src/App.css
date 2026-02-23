@@ -1,4 +1,4 @@
-/* App.css المحدث بالكامل للطباعة الرباعية */
+/* App.css المحدث بالكامل للطباعة الرباعية الاحترافية */
 .App {
   text-align: center;
 }
@@ -6,10 +6,15 @@
 @media print {
   @page {
     size: portrait;
-    margin: 5mm; /* هوامش ضيقة لاستيعاب 4 ملصقات */
+    margin: 5mm; /* هوامش ضيقة لاستغلال مساحة ورقة A4 */
   }
 
-  .no-print, .hide-on-print {
+  /* إخفاء نصوص النظام الزائدة والعناصر غير المطلوبة */
+  .no-print, 
+  .navbar, 
+  h1, h2, h3, h4, h5, 
+  .card-header,
+  header {
     display: none !important;
   }
 
@@ -21,49 +26,50 @@
     margin: 0 !important;
   }
 
-  /* تقسيم العرض بدقة لـ 4 ملصقات */
+  /* تقسيم العرض بدقة لـ 4 ملصقات (25% لكل ملصق) */
   .barcode-wrapper {
     width: 25% !important; 
-    padding: 1.5mm !important;
+    padding: 1mm !important; /* تقليل الحشو لزيادة مساحة الـ QR */
     box-sizing: border-box !important;
     float: left !important;
   }
 
   .barcode-card {
-    border: 1px dashed #ccc !important; /* إطار خفيف للقص */
-    height: 6.2cm !important; /* ارتفاع متناسب مع العرض الرباعي */
+    border: 1px dashed #ccc !important; /* إطار خفيف جداً لتسهيل القص */
+    height: 6.5cm !important; /* ارتفاع مثالي للتوزيع الرباعي */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: space-between !important;
     page-break-inside: avoid;
-    padding: 3mm !important;
+    padding: 4mm !important;
     box-sizing: border-box !important;
     background-color: white !important;
   }
 
+  /* ضبط حجم الـ QR ليكون كبيراً وواضحاً في المساحة المتاحة */
   .qr-container svg {
-    width: 3.8cm !important;
-    height: 3.8cm !important;
+    width: 4cm !important;
+    height: 4cm !important;
   }
 
   .school-name { 
-    font-size: 9pt !important; 
+    font-size: 10pt !important; 
     font-weight: bold !important;
-    margin-bottom: 1mm !important;
+    margin-bottom: 2mm !important;
     color: #000 !important;
   }
 
   .item-details { 
-    font-size: 7.5pt !important; 
+    font-size: 8pt !important; 
     text-align: center !important;
-    margin-top: 1mm !important;
-    line-height: 1.1 !important;
+    margin-top: 2mm !important;
+    line-height: 1.2 !important;
     color: #000 !important;
   }
 }
 
-/* التنسيق على الشاشة */
+/* تنسيق العرض على المتصفح */
 .barcode-card {
   border: 1px solid #ddd;
   padding: 15px;
@@ -75,7 +81,7 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  min-height: 250px;
+  min-height: 260px;
 }
 
 .barcode-checkbox {
