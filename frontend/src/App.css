@@ -1,4 +1,5 @@
-/* App.css المحدث بالكامل */
+/* App.css المحدث بالكامل بنظام العرض الطولي */
+
 .App {
   text-align: center;
 }
@@ -34,11 +35,11 @@
   to { transform: rotate(360deg); }
 }
 
-/* --- إعدادات الطباعة المحدثة للوضع الطولي --- */
+/* --- إعدادات الطباعة المحدثة للوضع الطولي (Portrait) --- */
 @media print {
   @page {
-    size: portrait; /* إجبار الصفحة على الوضع الطولي */
-    margin: 5mm;
+    size: portrait; /* إجبار الطابعة على استخدام الوضع الطولي */
+    margin: 5mm;    /* تقليل الهوامش لاستغلال مساحة الورقة */
   }
 
   .no-print, .hide-on-print {
@@ -51,10 +52,10 @@
     padding: 0 !important;
   }
 
-  /* تعديل مربعات الاحتواء لتصبح طولية */
+  /* تنسيق مربعات الاحتواء لتصبح مستطيلة طولية */
   .barcode-card {
-    width: 8cm !important;  /* عرض المربع */
-    height: 11cm !important; /* ارتفاع المربع ليصبح طولياً */
+    width: 8.5cm !important;  /* عرض الملصق */
+    height: 11.5cm !important; /* زيادة الارتفاع ليكون الملصق واقفاً */
     padding: 0.5cm !important;
     margin: 0.3cm auto !important;
     border: 1px solid #000 !important;
@@ -71,23 +72,25 @@
     font-size: 14pt !important;
     font-weight: bold !important;
     margin-top: 5px !important;
-    color: #1a4a7c !important;
+    color: #1a4a7c !important; /* لون هوية مدارس الأندلس */
   }
   
   .barcode-card .item-details {
     font-size: 11pt !important;
     margin-bottom: 5px !important;
     text-align: center !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
+    font-weight: 500 !important;
   }
 
+  /* ضبط حجم الـ QR Code داخل التصميم الطولي */
   .qr-container svg {
-    width: 5.5cm !important; /* تكبير الـ QR ليناسب الطول */
-    height: 5.5cm !important;
+    width: 5.8cm !important;
+    height: 5.8cm !important;
   }
 }
 
-/* تنسيق العرض على المتصفح */
+/* --- تنسيق العرض داخل المتصفح (Preview) --- */
 .barcode-card {
   border: 1px solid #ddd;
   padding: 15px;
@@ -99,7 +102,12 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  min-height: 350px;
+  min-height: 380px; /* مظهر طولي على الشاشة أيضاً */
+  transition: box-shadow 0.3s ease;
+}
+
+.barcode-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .barcode-checkbox {
@@ -107,4 +115,5 @@
   top: 10px;
   right: 10px;
   z-index: 10;
+  transform: scale(1.2); /* تكبير المربع ليسهل تحديثه باللمس */
 }
