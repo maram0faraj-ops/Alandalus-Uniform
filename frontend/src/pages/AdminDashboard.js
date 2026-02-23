@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Spinner, Alert, ListGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Table, Badge } from 'react-bootstrap';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -13,16 +13,7 @@ import {
 } from 'chart.js';
 import api from '../api';
 
-// Register the necessary components for the charts
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -32,16 +23,27 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // --- دالة ذكية لتوحيد المسميات ودمج المكرر ---
+  const normalizeStage = (stageName) => {
+    if (!stageName) return 'غير محدد';
+    let name = stageName.trim();
+    
+    // تصحيح الهمزات الشائعة
+    name = name.replace('اطفال', 'أطفال'); // تحويل اطفال -> أطفال
+    name = name.replace('إبتدائي', 'ابتدائي'); // توحيد همزة ابتدائي
+
+    // دمج "ابتدائي" العامة مع "ابتدائي بنات" (أو حسب رغبتك)
+    // هذا السطر يحل مشكلة ظهور الابتدائي مرتين بدمجهم في مسمى واحد
+    if (name === 'ابتدائي') return 'ابتدائي بنات'; 
+
+    return name;
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const [
-          statsRes,
-          alertsRes,
-          stageStatsRes,
-          statusStatsRes
-        ] = await Promise.all([
+        const [statsRes, alertsRes, stageStatsRes, statusStatsRes] = await Promise.all([
           api.get('/api/dashboard/stats'),
           api.get('/api/dashboard/low-stock-alerts'),
           api.get('/api/dashboard/stage-payment-stats'),
@@ -51,43 +53,49 @@ function AdminDashboard() {
         setStats(statsRes.data);
         setLowStockAlerts(alertsRes.data);
 
-        // --- Process Stage Payment Chart Data ---
-        const stageData = stageStatsRes.data;
-        const stageLabels = [...new Set(stageData.map(item => item._id.stage))].filter(Boolean);
+        // --- معالجة بيانات الرسم البياني (دمج القيم المكررة) ---
+        const rawStageData = stageStatsRes.data;
+        const processedData = {};
 
-        if (stageLabels.length > 0) {
+        rawStageData.forEach(item => {
+            // نستخدم الدالة لتوحيد الاسم قبل التجميع
+            const cleanName = normalizeStage(item._id);
+            // جمع الأرقام للمسميات المتشابهة
+            processedData[cleanName] = (processedData[cleanName] || 0) + item.count;
+        });
+
+        const labels = Object.keys(processedData).sort();
+        const dataValues = labels.map(label => processedData[label]);
+
+        if (labels.length > 0) {
             setStageChartData({
-              labels: stageLabels,
+              labels: labels,
               datasets: [
                 {
-                  label: 'مدفوع',
-                  data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'مدفوع')?.count || 0
-                  ),
-                  backgroundColor: '#4bc0c0',
-                },
-                {
-                  label: 'مجاني',
-                  data: stageLabels.map(label =>
-                    stageData.find(item => item._id.stage === label && item._id.paymentType === 'مجاني')?.count || 0
-                  ),
-                  backgroundColor: '#ff6384',
-                },
+                  label: 'إجمالي الزي المسلّم',
+                  data: dataValues,
+                  backgroundColor: '#36A2EB',
+                  borderRadius: 5,
+                  barThickness: 40,
+                }
               ],
             });
         }
 
-        // --- Process Inventory Status Chart Data ---
-        const statusLabels = statusStatsRes.data.map(item => {
-            if (item._id === 'in_stock') return 'في المخزون';
-            if (item._id === 'delivered') return 'تم التسليم';
-            return item._id;
-        });
+        // --- إعداد بيانات المخطط الدائري ---
+        const statusMap = { 'in_stock': 'في المخزون', 'delivered': 'تم التسليم' };
+        const statusDataOrdered = statusStatsRes.data.map(item => ({
+            label: statusMap[item._id] || item._id,
+            value: item.count,
+            id: item._id
+        }));
+
         setStatusChartData({
-          labels: statusLabels,
+          labels: statusDataOrdered.map(d => d.label),
           datasets: [{
-            data: statusStatsRes.data.map(item => item.count),
-            backgroundColor: ['#36a2eb', '#ffce56', '#ff6384'],
+            data: statusDataOrdered.map(d => d.value),
+            backgroundColor: statusDataOrdered.map(d => d.id === 'in_stock' ? '#FFCE56' : '#4BC0C0'),
+            hoverOffset: 4
           }],
         });
 
@@ -102,65 +110,140 @@ function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
-  if (loading) {
-    return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
-  }
-  if (error) {
-    return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
-  }
+  const StatCard = ({ title, value, icon, color, bg }) => (
+    <Card className="border-0 shadow-sm h-100" style={{ backgroundColor: bg || '#fff' }}>
+      <Card.Body className="d-flex align-items-center justify-content-between">
+        <div>
+          <h6 className="text-muted mb-2">{title}</h6>
+          <h3 className="fw-bold mb-0" style={{ color: color }}>{value}</h3>
+        </div>
+        <div className="d-flex align-items-center justify-content-center rounded-circle" 
+             style={{ width: '60px', height: '60px', backgroundColor: `${color}20`, fontSize: '2rem' }}>
+          {icon}
+        </div>
+      </Card.Body>
+    </Card>
+  );
+
+  if (loading) return <Container className="d-flex justify-content-center align-items-center" style={{height: '80vh'}}><Spinner animation="grow" variant="primary" /></Container>;
+  if (error) return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
 
   return (
-    <Container fluid className="p-4">
-      {/* Cards */}
-      <Row>
-        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>إجمالي المخزون الحالي</Card.Title><Card.Text className="fs-2 fw-bold text-primary">{stats?.totalStock ?? 0}</Card.Text></Card.Body></Card></Col>
-        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>الزي الذي تم تسليمه</Card.Title><Card.Text className="fs-2 fw-bold text-success">{stats?.deliveredStock ?? 0}</Card.Text></Card.Body></Card></Col>
-        <Col md={4}><Card className="text-center shadow-sm h-100"><Card.Body><Card.Title>إجمالي أولياء الأمور</Card.Title><Card.Text className="fs-2 fw-bold text-info">{stats?.totalParents ?? 0}</Card.Text></Card.Body></Card></Col>
-      </Row>
+    <Container fluid className="py-4 bg-light" style={{ minHeight: '100vh' }}>
+      <div className="mb-4">
+        <h2 className="fw-bold text-dark">لوحة التحكم</h2>
+        <p className="text-muted">نظرة عامة على حالة المخزون والتسليم</p>
+      </div>
 
-      {/* Charts */}
-      <Row className="mt-4">
-        <Col lg={7} className="mb-4">
-          <Card className="shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>الزي المدفوع والمجاني لكل مرحلة</Card.Title>
-              <div style={{ position: 'relative', height: '300px' }}>
-                {stageChartData ? <Bar data={stageChartData} options={{ responsive: true, maintainAspectRatio: false }} /> : <p className="text-center mt-5">لا توجد بيانات لعرضها</p>}
-              </div>
-            </Card.Body>
-          </Card>
+      {/* تم تعديل التصميم: حذف بطاقة الأولياء وجعل البطاقتين الباقيتين تأخذان نصف الشاشة لكل منهما */}
+      <Row className="g-4 mb-4">
+        <Col md={6}>
+          <StatCard title="إجمالي المخزون" value={stats?.totalStock ?? 0} icon="👕" color="#FFCE56" />
         </Col>
-        <Col lg={5} className="mb-4">
-          <Card className="shadow-sm h-100">
-            <Card.Body>
-              <Card.Title>حالة المخزون الإجمالية</Card.Title>
-              <div style={{ position: 'relative', height: '300px' }}>
-                {statusChartData && <Doughnut data={statusChartData} options={{ responsive: true, maintainAspectRatio: false }} />}
-              </div>
-            </Card.Body>
-          </Card>
+        <Col md={6}>
+          <StatCard title="تم التسليم" value={stats?.deliveredStock ?? 0} icon="✅" color="#4BC0C0" />
         </Col>
       </Row>
 
-      {/* Low Stock Alerts */}
-      <Row className="mt-4">
-        <Col>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-warning text-dark">
-              <h5>تنبيهات المخزون المنخفض (25 قطعة أو أقل) ⚠️</h5> 
-            </Card.Header>
-            <ListGroup variant="flush">
-              {lowStockAlerts.length > 0 ? (
-                lowStockAlerts.map(item => (
-                  <ListGroup.Item key={item.uniformDetails._id}>
-                    <strong>{item.quantity}</strong> قطعة متبقية من: {item.uniformDetails.stage} - {item.uniformDetails.type} (مقاس: {item.uniformDetails.size}, {item.uniformDetails.paymentType})
-                  </ListGroup.Item>
-                ))
-              ) : (
-                <ListGroup.Item>لا توجد تنبيهات حاليًا، المخزون بحالة جيدة!</ListGroup.Item>
-              )}
-            </ListGroup>
-          </Card>
+      <Row className="g-4">
+        <Col lg={8}>
+            <Card className="border-0 shadow-sm mb-4">
+                <Card.Header className="bg-white border-0 pt-4 px-4">
+                    <h5 className="fw-bold">📊 مستوى تسليم الزي حسب المرحلة</h5>
+                </Card.Header>
+                <Card.Body className="px-4 pb-4">
+                    <div style={{ height: '350px' }}>
+                        {stageChartData ? 
+                            <Bar 
+                                data={stageChartData} 
+                                options={{ 
+                                    responsive: true, 
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: false } },
+                                    scales: { y: { beginAtZero: true, grid: { display: true, color: '#f0f0f0' } }, x: { grid: { display: false } } }
+                                }} 
+                            /> 
+                        : <p className="text-center text-muted mt-5">جاري تجميع البيانات...</p>}
+                    </div>
+                </Card.Body>
+            </Card>
+
+             <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 className="fw-bold text-danger">⚠️ تنبيهات المخزون المنخفض</h5>
+                    <Badge bg="danger" pill>{lowStockAlerts.length} تنبيهات</Badge>
+                </Card.Header>
+                <Card.Body className="p-0">
+                    {lowStockAlerts.length > 0 ? (
+                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            <Table hover responsive className="mb-0 align-middle">
+                                <thead className="bg-light sticky-top">
+                                    <tr>
+                                        <th className="px-4">المرحلة</th>
+                                        <th>النوع</th>
+                                        <th>المقاس</th>
+                                        <th className="text-center">الكمية المتبقية</th>
+                                        <th className="text-center">الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {lowStockAlerts.map((item, idx) => (
+                                        <tr key={idx}>
+                                            <td className="px-4 fw-bold">{item.uniformDetails.stage}</td>
+                                            <td>{item.uniformDetails.type}</td>
+                                            <td><Badge bg="secondary">{item.uniformDetails.size}</Badge></td>
+                                            <td className="text-center fw-bold text-dark">{item.quantity}</td>
+                                            <td className="text-center">
+                                                {item.quantity <= 5 ? 
+                                                    <Badge bg="danger">حرج جداً</Badge> : 
+                                                    <Badge bg="warning" text="dark">منخفض</Badge>
+                                                }
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
+                    ) : (
+                        <div className="text-center p-5">
+                            <h1 className="display-4">✅</h1>
+                            <p className="text-muted">المخزون بحالة ممتازة!</p>
+                        </div>
+                    )}
+                </Card.Body>
+            </Card>
+        </Col>
+
+        <Col lg={4}>
+            <Card className="border-0 shadow-sm h-100">
+                <Card.Header className="bg-white border-0 pt-4 px-4">
+                    <h5 className="fw-bold">نسبة التوزيع الكلية</h5>
+                </Card.Header>
+                <Card.Body className="d-flex flex-column justify-content-center align-items-center">
+                    <div style={{ width: '100%', height: '300px', position: 'relative' }}>
+                        {statusChartData && 
+                            <Doughnut 
+                                data={statusChartData} 
+                                options={{ 
+                                    responsive: true, 
+                                    maintainAspectRatio: false,
+                                    cutout: '70%',
+                                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
+                                }} 
+                            />
+                        }
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -60%)', textAlign: 'center' }}>
+                            <h2 className="fw-bold mb-0">{stats?.totalStock + stats?.deliveredStock || 0}</h2>
+                            <small className="text-muted">إجمالي القطع</small>
+                        </div>
+                    </div>
+                    <div className="mt-4 w-100">
+                        <Alert variant="info" className="mb-0 text-center border-0 bg-opacity-10">
+                             <small>يتم تحديث البيانات تلقائياً</small>
+                        </Alert>
+                    </div>
+                </Card.Body>
+            </Card>
         </Col>
       </Row>
     </Container>

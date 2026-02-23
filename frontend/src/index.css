@@ -1,91 +1,147 @@
+/* استيراد خط تجوال وتطبيقه على كامل الموقع */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+
+:root {
+  /* --- تم تعديل اللون إلى Navy Blue --- */
+  --primary-color: #001f3f; 
+  /* ----------------------------------- */
+  
+  --secondary-color: #e67e22; 
+  --bg-color: #f4f7f6; 
+  --card-shadow: 0 10px 20px rgba(0,0,0,0.08); 
+  --border-radius: 12px;
+}
+
 body {
   direction: rtl;
   text-align: right;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
+  background-color: var(--bg-color);
+  color: #333;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* --- On-Screen Styles for the Grid --- */
-.barcode-wrapper {
-  padding: 10px; /* Adds space between cards on the screen */
+/* --- تحسينات عامة لعناصر Bootstrap --- */
+
+.card {
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--card-shadow);
+  background: #ffffff;
+  transition: transform 0.2s ease-in-out;
 }
 
-.barcode-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  height: 100%;
+.form-control, .form-select {
+  border-radius: 8px !important;
+  padding: 10px 15px !important;
+  border: 1px solid #dee2e6;
+  background-color: #fdfdfd;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 4px rgba(0, 31, 63, 0.1) !important; /* تعديل لون الظل ليتناسب مع Navy */
+  background-color: #fff;
+}
+
+.btn {
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  /* تدرج لوني أزرق نيڤي */
+  background: linear-gradient(135deg, #001f3f 0%, #003366 100%) !important;
+  border: none !important;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 31, 63, 0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+  border: none !important;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%) !important;
+  border: none !important;
+}
+
+/* --- تصميم صفحة الدخول --- */
+.login-background {
+  background: linear-gradient(135deg, #ece9e6 0%, #ffffff 100%);
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 }
 
-.school-name {
-  font-weight: bold;
-  font-size: 0.9rem;
+.login-card {
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
-.item-details {
-  font-size: 0.8rem;
+.login-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 30px;
+  text-align: center;
 }
 
+.login-logo {
+  width: 100px; /* تكبير الشعار قليلاً */
+  height: 100px;
+  background: white;
+  border-radius: 50%;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  object-fit: contain; /* لضمان ظهور الشعار بالكامل */
+}
 
-/* --- FINAL AND COMPLETE PRINT STYLES --- */
+/* --- جداول --- */
+.table {
+  background-color: white;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+
+.table thead th {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  font-weight: 500;
+}
+
+/* --- Barcode & Print Styles --- */
+.barcode-wrapper { padding: 10px; }
+.barcode-card {
+  border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem;
+  background-color: #f8f9fa; height: 100%;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+.school-name { font-weight: bold; font-size: 0.9rem; }
+.item-details { font-size: 0.8rem; }
+
 @media print {
-  @page {
-    size: A4 landscape; /* Set orientation to landscape */
-    margin: 1cm;
-  }
-
-  body {
-    background-color: white !important;
-  }
-  
-  .no-print {
-    display: none !important;
-  }
-
-  .printable {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-
-  .printable .row {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  /* This is the container for each card, it creates the margin */
-  .printable .barcode-wrapper {
-    padding: 5mm !important; /* This creates the space between labels */
-    height: 8cm; /* Give each label a fixed height for landscape */
-  }
-
-  /* This is the card itself, with the dashed border */
-  .printable .barcode-card {
-    border: 1px dashed #777 !important;
-    padding: 2mm !important;
-    background: none !important;
-    border-radius: 0 !important;
-  }
-  
-  /* Make the barcode responsive */
-  .barcode-container svg {
-    width: 100% !important;
-    height: 50px !important;
-  }
-  
-  .school-name, .item-details {
-    color: #000 !important;
-    margin: 0.25rem 0;
-  }
-}
-@media print {
-  @page {
-    size: portrait;
-  }
+  @page { size: A4 landscape; margin: 1cm; }
+  body { background-color: white !important; }
+  .no-print { display: none !important; }
+  .printable { position: absolute; left: 0; top: 0; width: 100%; }
+  .printable .row { display: flex; flex-wrap: wrap; }
+  .printable .barcode-wrapper { padding: 5mm !important; height: 8cm; }
+  .printable .barcode-card { border: 1px dashed #777 !important; padding: 2mm !important; background: none !important; border-radius: 0 !important; }
+  .barcode-container svg { width: 100% !important; height: 50px !important; }
+  .school-name, .item-details { color: #000 !important; margin: 0.25rem 0; }
 }

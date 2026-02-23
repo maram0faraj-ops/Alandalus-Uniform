@@ -1,23 +1,23 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-// هذه البوابة تتحقق من وجود توكن ومن أن دور المستخدم هو "admin"
 const AdminRoute = ({ children }) => {
+  // نقرأ التوكن والدور مباشرة كما حفظناهم في صفحة الدخول
   const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
+  const role = localStorage.getItem('role');
   
-  if (!token || !userString) {
+  // 1. إذا لم يكن هناك توكن -> ارجع لصفحة الدخول
+  if (!token) {
     return <Navigate to="/login" />;
   }
 
-  const user = JSON.parse(userString);
-
-  if (user.role !== 'admin') {
-    // إذا لم يكن المستخدم أدمن، يتم توجيهه إلى صفحة تسليم الزي
+  // 2. إذا كان الدور ليس "admin" -> ارجع لصفحة الموظفين (أو أي صفحة أخرى)
+  if (role !== 'admin') {
     return <Navigate to="/staff/deliver" />;
   }
 
+  // 3. كل شيء سليم -> اسمح بالدخول
   return children;
 };
 
- export default AdminRoute;
+export default AdminRoute;

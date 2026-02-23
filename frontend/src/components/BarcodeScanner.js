@@ -11,58 +11,44 @@ const BarcodeScanner = ({ onScanSuccess, onScanError }) => {
     };
 
     const config = {
-      fps: 10,
-      qrbox: (viewfinderWidth, viewfinderHeight) => {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        return { width: minEdge * 0.7, height: minEdge * 0.7 };
-      },
+      fps: 20, // زيادة عدد الإطارات لزيادة سرعة استجابة الكاميرا عند الحركة
+      qrbox: { width: 250, height: 250 }, // تحديد مساحة ثابتة ومناسبة لمربعات QR
+      aspectRatio: 1.0, // ضبط نسبة العرض إلى الارتفاع لتكون مربعة تماماً مثل الـ QR
     };
     
     const html5QrCode = new Html5Qrcode(videoRef.current.id);
     html5QrCodeRef.current = html5QrCode;
 
-    // --- منطق جديد ومحسن لتشغيل الكاميرا ---
-
-    // المحاولة الأولى (الصارمة): طلب الكاميرا الخلفية بشكل إلزامي
+    // تشغيل الكاميرا مع تفضيل الكاميرا الخلفية
     html5QrCode.start(
-      { facingMode: { exact: "environment" } },
+      { facingMode: "environment" }, // البحث عن الكاميرا الخلفية تلقائياً
       config,
-      qrCodeSuccessCallback,
-      (errorMessage) => {}
-    ).catch(err1 => {
-      console.warn("الطلب الصارم للكاميرا الخلفية فشل، تجربة الطلب العادي", err1);
-
-      // المحاولة الثانية (التفضيلية): طلب الكاميرا الخلفية كتفضيل
-      html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        qrCodeSuccessCallback,
-        (errorMessage) => {}
-      ).catch(err2 => {
-        console.warn("الطلب العادي للكاميرا الخلفية فشل، تجربة أي كاميرا", err2);
-
-        // المحاولة الأخيرة (الاحتياطية): طلب أي كاميرا متاحة
-        html5QrCode.start(
-          undefined,
-          config,
-          qrCodeSuccessCallback,
-          (errorMessage) => {}
-        ).catch(err3 => {
-          console.error("فشل تشغيل جميع الكاميرات", err3);
-          onScanError(err3);
-        });
-      });
+      qrCodeSuccessCallback
+    ).catch(err => {
+      console.error("فشل تشغيل الكاميرا:", err);
+      // محاولة تشغيل أي كاميرا متاحة في حال فشل الكاميرا الخلفية
+      html5QrCode.start({ facingMode: "user" }, config, qrCodeSuccessCallback)
+        .catch(err2 => onScanError(err2));
     });
 
-    // دالة التنظيف
     return () => {
       if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        html5QrCodeRef.current.stop().catch(err => console.error("فشل إيقاف الماسح الضوئي.", err));
+        html5QrCodeRef.current.stop().catch(err => console.error("فشل إيقاف الكاميرا:", err));
       }
     };
   }, [onScanSuccess, onScanError]);
 
-  return <div id="reader" ref={videoRef} style={{ width: '100%' }}></div>;
+  return (
+    <div 
+      id="reader" 
+      ref={videoRef} 
+      style={{ 
+        width: '100%', 
+        overflow: 'hidden', 
+        borderRadius: '10px' 
+      }}
+    ></div>
+  );
 };
 
 export default BarcodeScanner;
