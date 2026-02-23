@@ -1,3 +1,4 @@
+/* App.css المحدث بالكامل */
 .App {
   text-align: center;
 }
@@ -29,53 +30,81 @@
 }
 
 @keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
+/* --- إعدادات الطباعة المحدثة للوضع الطولي --- */
 @media print {
+  @page {
+    size: portrait; /* إجبار الصفحة على الوضع الطولي */
+    margin: 5mm;
+  }
+
+  .no-print, .hide-on-print {
+    display: none !important;
+  }
+
+  .printable {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* تعديل مربعات الاحتواء لتصبح طولية */
   .barcode-card {
-    width: 7cm;
-    height: 3.5cm;
-    padding: 0.2cm;
-    margin-bottom: 0.3cm; /* إضافة مسافة بسيطة بين الملصقات عمودياً */
-    border: 1px dashed #ccc; /* إضافة حدود متقطعة لتسهيل القص (اختياري) */
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    box-sizing: border-box; /* يضمن أن الحجم المحدد يشمل الحواف والهامش الداخلي */
+    width: 8cm !important;  /* عرض المربع */
+    height: 11cm !important; /* ارتفاع المربع ليصبح طولياً */
+    padding: 0.5cm !important;
+    margin: 0.3cm auto !important;
+    border: 1px solid #000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    page-break-inside: avoid;
+    box-sizing: border-box !important;
+    position: relative;
   }
 
   .barcode-card .school-name {
-    font-size: 8pt;
-    margin-bottom: 2px;
+    font-size: 14pt !important;
+    font-weight: bold !important;
+    margin-top: 5px !important;
+    color: #1a4a7c !important;
   }
   
   .barcode-card .item-details {
-    font-size: 7pt;
-    margin-top: 2px;
+    font-size: 11pt !important;
+    margin-bottom: 5px !important;
+    text-align: center !important;
+    line-height: 1.4 !important;
   }
-}
-/* Hide elements with this class only when printing */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  .hide-on-print {
-    display: none !important;
+
+  .qr-container svg {
+    width: 5.5cm !important; /* تكبير الـ QR ليناسب الطول */
+    height: 5.5cm !important;
   }
 }
 
-/* Style for the checkbox on screen */
+/* تنسيق العرض على المتصفح */
+.barcode-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  text-align: center;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-height: 350px;
+}
+
 .barcode-checkbox {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 10px;
+  right: 10px;
   z-index: 10;
 }
