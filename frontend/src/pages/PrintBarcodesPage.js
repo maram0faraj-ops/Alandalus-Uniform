@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Spinner, Alert, Form, Card, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Button, Spinner, Form, Card, InputGroup } from 'react-bootstrap';
 import api from '../api';
 import BarcodeRenderer from '../components/BarcodeRenderer';
 
@@ -7,7 +7,6 @@ function PrintBarcodesPage() {
   const [allItems, setAllItems] = useState([]); 
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
   const [filters, setFilters] = useState({
     stage: 'all',
@@ -31,7 +30,7 @@ function PrintBarcodesPage() {
         
         setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
       } catch (err) {
-        setError('فشل في جلب بيانات المخزون');
+        console.error('فشل في جلب بيانات المخزون');
       } finally {
         setLoading(false);
       }
@@ -69,14 +68,14 @@ function PrintBarcodesPage() {
   return (
     <Container className="mt-5">
       <div className="no-print">
-        <Card className="mb-4">
-          <Card.Header><h5>فلترة النتائج</h5></Card.Header>
+        <Card className="mb-4 shadow-sm">
+          <Card.Header className="bg-primary text-white"><h5>فلترة نتائج الزي المدرسي</h5></Card.Header>
           <Card.Body>
             <Row className="align-items-end">
               <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}</Form.Select></Form.Group></Col>
               <Col md={3}><Form.Group><Form.Label>النوع</Form.Label><Form.Select name="type" value={filters.type} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}</Form.Select></Form.Group></Col>
               <Col md={2}><Form.Group><Form.Label>المقاس</Form.Label><Form.Select name="size" value={filters.size} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.sizes.map(sz => <option key={sz} value={sz}>{sz}</option>)}</Form.Select></Form.Group></Col>
-              <Col md={4}><Form.Group><Form.Label>التاريخ</Form.Label><InputGroup><Form.Control type="date" name="entryDate" value={filters.entryDate} onChange={handleFilterChange} /><Button variant="outline-secondary" onClick={() => setFilters({...filters, entryDate: ''})}>مسح</Button></InputGroup></Form.Group></Col>
+              <Col md={4}><Form.Group><Form.Label>تاريخ الإضافة</Form.Label><InputGroup><Form.Control type="date" name="entryDate" value={filters.entryDate} onChange={handleFilterChange} /><Button variant="outline-secondary" onClick={() => setFilters({...filters, entryDate: ''})}>مسح</Button></InputGroup></Form.Group></Col>
             </Row>
           </Card.Body>
         </Card>
@@ -87,10 +86,10 @@ function PrintBarcodesPage() {
           <Button variant="outline-primary" size="sm" onClick={handleSelectAll}>تحديد الكل</Button>
           <Button variant="outline-secondary" size="sm" className="ms-2" onClick={handleDeselectAll}>إلغاء التحديد</Button>
         </div>
-        <Button variant="success" onClick={handlePrint} disabled={selectedItems.size === 0}>🖨️ طباعة ({selectedItems.size})</Button>
+        <Button variant="success" onClick={handlePrint} disabled={selectedItems.size === 0}>🖨️ طباعة الملصقات المختارة ({selectedItems.size})</Button>
       </div>
 
-      {loading && <div className="text-center"><Spinner animation="border" /></div>}
+      {loading && <div className="text-center my-5"><Spinner animation="border" variant="primary" /></div>}
       
       {!loading && (
         <div className="printable">
@@ -100,16 +99,26 @@ function PrintBarcodesPage() {
               const hideOnPrint = selectedItems.size > 0 && !isSelected;
               
               return (
-                <Col xs={6} key={item._id} className={`barcode-wrapper ${hideOnPrint ? 'hide-on-print' : ''}`}>
-                  <div className="barcode-card">
-                    <Form.Check type="checkbox" className="no-print barcode-checkbox" checked={isSelected} onChange={() => handleSelectionChange(item._id)} />
+                <Col 
+                  xs={6} 
+                  key={item._id} 
+                  className={`barcode-wrapper position-relative ${hideOnPrint ? 'hide-on-print' : ''}`}
+                >
+                  <div className={`barcode-card ${isSelected ? 'border-primary shadow-sm' : ''}`}>
+                    <Form.Check 
+                      type="checkbox"
+                      id={`check-${item._id}`}
+                      className="no-print barcode-checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectionChange(item._id)}
+                    />
                     <p className="school-name">مدارس الأندلس الأهلية</p>
                     <div className="qr-container">
                       <BarcodeRenderer value={item.barcode} />
                     </div>
                     <p className="item-details">
                       {item.uniform.stage} - {item.uniform.type} <br/>
-                      <strong>مقاس: {item.uniform.size}</strong>
+                      <strong>المقاس: {item.uniform.size}</strong>
                     </p>
                   </div>
                 </Col>
