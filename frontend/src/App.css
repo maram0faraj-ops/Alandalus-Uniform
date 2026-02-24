@@ -1,4 +1,4 @@
-/* App.css المحدث بالكامل للطباعة الرباعية الاحترافية */
+/* App.css المحدث بالكامل للطباعة الرباعية المثالية */
 .App {
   text-align: center;
 }
@@ -6,16 +6,26 @@
 @media print {
   @page {
     size: portrait;
-    margin: 5mm; /* هوامش ضيقة لاستغلال مساحة ورقة A4 */
+    margin: 5mm; /* هوامش ضيقة لاستغلال مساحة الورقة */
   }
 
-  /* إخفاء نصوص النظام الزائدة والعناصر غير المطلوبة */
+  /* إخفاء كل ما هو ليس ملصقاً لضمان عدم التداخل */
   .no-print, 
   .navbar, 
-  h1, h2, h3, h4, h5, 
-  .card-header,
-  header {
+  header, 
+  footer, 
+  .card-header, 
+  h1, h2, h3, h4, h5,
+  .system-title,
+  div[class*="Header"],
+  .filter-section {
     display: none !important;
+  }
+
+  .printable {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .printable .row {
@@ -26,44 +36,43 @@
     margin: 0 !important;
   }
 
-  /* تقسيم العرض بدقة لـ 4 ملصقات (25% لكل ملصق) */
+  /* تقسيم العرض بدقة لـ 4 ملصقات */
   .barcode-wrapper {
     width: 25% !important; 
-    padding: 1mm !important; /* تقليل الحشو لزيادة مساحة الـ QR */
+    padding: 1mm !important;
     box-sizing: border-box !important;
     float: left !important;
+    page-break-inside: avoid !important; /* منع انقسام الملصق بين صفحتين */
   }
 
   .barcode-card {
-    border: 1px dashed #ccc !important; /* إطار خفيف جداً لتسهيل القص */
-    height: 6.5cm !important; /* ارتفاع مثالي للتوزيع الرباعي */
+    border: 1px dashed #ccc !important;
+    height: 6.8cm !important; /* ارتفاع ثابت يمنع تداخل النصوص */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: space-between !important;
-    page-break-inside: avoid;
     padding: 4mm !important;
     box-sizing: border-box !important;
     background-color: white !important;
   }
 
-  /* ضبط حجم الـ QR ليكون كبيراً وواضحاً في المساحة المتاحة */
   .qr-container svg {
-    width: 4cm !important;
-    height: 4cm !important;
+    width: 4.2cm !important;
+    height: 4.2cm !important;
   }
 
   .school-name { 
     font-size: 10pt !important; 
     font-weight: bold !important;
-    margin-bottom: 2mm !important;
+    margin: 0 0 2mm 0 !important;
     color: #000 !important;
   }
 
   .item-details { 
     font-size: 8pt !important; 
     text-align: center !important;
-    margin-top: 2mm !important;
+    margin: 2mm 0 0 0 !important;
     line-height: 1.2 !important;
     color: #000 !important;
   }
@@ -83,9 +92,4 @@
   position: relative;
   min-height: 260px;
 }
-
-.barcode-checkbox {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-}
+.barcode-checkbox { position: absolute; top: 5px; right: 5px; }
