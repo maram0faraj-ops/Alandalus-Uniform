@@ -4,12 +4,11 @@ import api from '../api';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 function DeliverUniformPage() {
-  // --- States ---
   const [barcode, setBarcode] = useState('');
   const [item, setItem] = useState(null);
   const [studentData, setStudentData] = useState({
     studentName: '',
-    stage: ' ابتدائي بنات',
+    stage: 'ابتدائي بنات',
     grade: 'أول',
     section: 'أ',
     paymentType: 'مدفوع', 
@@ -34,20 +33,16 @@ function DeliverUniformPage() {
     setSuccess('');
     setItem(null);
     try {
-      const response = await api.get(`/api/delivery/item/${barcode}`);
+      const response = await api.get(`/api/delivery/item/${barcode.trim()}`);
       setItem(response.data);
-      
-      // --- التعديل هنا: ضمان وجود قيمة افتراضية ---
       if (response.data && response.data.uniform) {
           setStudentData(prev => ({ 
             ...prev, 
             paymentType: response.data.uniform.paymentType || 'مدفوع' 
           }));
       }
-      // ------------------------------------------
-
     } catch (err) {
-      setError(err.response?.data?.msg || 'حدث خطأ أثناء البحث عن الباركود');
+      setError(err.response?.data?.msg || 'الباركود غير صالح أو تم تسليمه مسبقاً');
     } finally {
       setLoading(false);
     }
@@ -59,13 +54,12 @@ function DeliverUniformPage() {
     setError('');
     setSuccess('');
     try {
-      const payload = { ...studentData, barcode };
+      const payload = { ...studentData, barcode: barcode.trim() };
       await api.post('/api/delivery/record', payload);
       setSuccess('تم توثيق عملية التسليم بنجاح!');
       setBarcode('');
       setItem(null);
-      // إعادة تعيين النموذج للوضع الافتراضي
-      setStudentData({ studentName: '', stage: 'ابتدائي', grade: 'أول', section: 'أ', paymentType: 'مدفوع' });
+      setStudentData({ studentName: '', stage: 'ابتدائي بنات', grade: 'أول', section: 'أ', paymentType: 'مدفوع' });
     } catch (err) {
       setError(err.response?.data?.msg || 'حدث خطأ أثناء توثيق التسليم');
     } finally {
@@ -82,12 +76,6 @@ function DeliverUniformPage() {
     setShowScanner(false);
   };
 
-  const handleScanError = (errorMessage) => {
-    console.error("Barcode Scan Error:", errorMessage);
-    setShowScanner(false);
-    setError('فشل مسح الباركود، يرجى المحاولة مرة أخرى أو إدخاله يدوياً.');
-  };
-
   return (
     <Container className="mt-5">
       <Row className="justify-content-md-center">
@@ -100,84 +88,54 @@ function DeliverUniformPage() {
           {!item && ( 
             showScanner ? (
               <div className="mb-3 text-center">
-                <div style={{ maxWidth: '400px', margin: 'auto', border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
-                  <BarcodeScanner 
-                    onScanSuccess={handleScanSuccess}
-                    onScanError={handleScanError}
-                  />
-                </div>
-                <Button variant="danger" className="mt-2 w-100" style={{ maxWidth: '400px' }} onClick={() => setShowScanner(false)}>
-                  إغلاق الكاميرا
-                </Button>
+                <BarcodeScanner onScanSuccess={handleScanSuccess} onScanError={() => setShowScanner(false)} />
+                <Button variant="danger" className="mt-2 w-100" onClick={() => setShowScanner(false)}>إغلاق الكاميرا</Button>
               </div>
             ) : (
               <Form onSubmit={handleBarcodeSearch}>
                 <Form.Group as={Row} className="mb-3 align-items-center">
-                  <Form.Label column sm={3} className="text-end">مسح الباركود</Form.Label>
+                  <Form.Label column sm={3}>مسح الباركود</Form.Label>
                   <Col sm={9}>
-                    <Form.Control
-                      type="text"
-                      ref={barcodeInputRef}
-                      value={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
-                      placeholder="أدخل أو امسح الباركود هنا"
-                    />
+                    <Form.Control type="text" ref={barcodeInputRef} value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="أدخل أو امسح الباركود" />
                   </Col>
                 </Form.Group>
-                <div className="d-grid gap-2 mb-4">
-                  <Button type="submit" disabled={loading || !barcode}>
-                    {loading ? <Spinner as="span" animation="border" size="sm" /> : 'بحث'}
-                  </Button>
-                  <Button variant="secondary" onClick={() => setShowScanner(true)}>
-                    📸 مسح بالكاميرا
-                  </Button>
+                <div className="d-grid gap-2">
+                  <Button type="submit" disabled={loading || !barcode}>بحث</Button>
+                  <Button variant="secondary" onClick={() => setShowScanner(true)}>📸 مسح بالكاميرا</Button>
                 </div>
               </Form>
             )
           )}
 
           {item && (
-            <Card>
-              <Card.Header as="h5">تفاصيل القطعة</Card.Header>
+            <Card className="shadow-sm">
+              <Card.Header as="h5" className="bg-primary text-white">تفاصيل القطعة</Card.Header>
               <Card.Body>
                 <p><strong>الوصف:</strong> {item.uniform?.stage} - {item.uniform?.type}</p>
                 <p><strong>المقاس:</strong> {item.uniform?.size}</p>
                 <p><strong>الباركود:</strong> {item.barcode}</p>
                 <hr />
-                <h4 className="mb-3">بيانات الطالب المستلم</h4>
                 <Form onSubmit={handleRecordDelivery}>
                   <Form.Group className="mb-3">
                     <Form.Label>اسم الطالب</Form.Label>
                     <Form.Control type="text" name="studentName" value={studentData.studentName} onChange={handleStudentDataChange} required />
                   </Form.Group>
                   <Row>
-                    <Col md={8}>
-                      <Row>
-                        <Col>
-                          <Form.Group className="mb-3">
-                            <Form.Label>المرحلة</Form.Label>
-                            <Form.Select name="stage" value={studentData.stage} onChange={handleStudentDataChange}>
-                             {['رياض أطفال بنات', 'رياض أطفال بنين', 'ابتدائي بنات', 'ابتدائي بنين', 'متوسط', 'ثانوي'].map(s => <option key={s} value={s}>{s}</option>)}
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-                        <Col>
-                          <Form.Group className="mb-3">
-                            <Form.Label>الصف</Form.Label>
-                            <Form.Select name="grade" value={studentData.grade} onChange={handleStudentDataChange}>
-                              {['أول', 'ثاني', 'ثالث', 'رابع', 'خامس', 'سادس'].map(g => <option key={g} value={g}>{g}</option>)}
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-                        <Col>
-                          <Form.Group className="mb-3">
-                            <Form.Label>الشعبة</Form.Label>
-                            <Form.Select name="section" value={studentData.section} onChange={handleStudentDataChange}>
-                              {['أ', 'ب', 'ج', 'د', 'هـ'].map(s => <option key={s} value={s}>{s}</option>)}
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-                      </Row>
+                    <Col md={4}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>المرحلة</Form.Label>
+                        <Form.Select name="stage" value={studentData.stage} onChange={handleStudentDataChange}>
+                          {['رياض أطفال بنات', 'رياض أطفال بنين', 'ابتدائي بنات', 'ابتدائي بنين', 'متوسط', 'ثانوي'].map(s => <option key={s} value={s}>{s}</option>)}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>الصف</Form.Label>
+                        <Form.Select name="grade" value={studentData.grade} onChange={handleStudentDataChange}>
+                          {['أول', 'ثاني', 'ثالث', 'رابع', 'خامس', 'سادس', 'سابع', 'ثامن', 'تاسع', 'عاشر', 'حادي عشر', 'ثاني عشر'].map(g => <option key={g} value={g}>{g}</option>)}
+                        </Form.Select>
+                      </Form.Group>
                     </Col>
                     <Col md={4}>
                       <Form.Group className="mb-3">
@@ -189,11 +147,7 @@ function DeliverUniformPage() {
                       </Form.Group>
                     </Col>
                   </Row>
-                  <div className="d-grid">
-                    <Button variant="success" type="submit" disabled={loading}>
-                      {loading ? <Spinner as="span" animation="border" size="sm" /> : 'توثيق التسليم'}
-                    </Button>
-                  </div>
+                  <Button variant="success" type="submit" className="w-100" disabled={loading}>توثيق التسليم</Button>
                 </Form>
               </Card.Body>
             </Card>

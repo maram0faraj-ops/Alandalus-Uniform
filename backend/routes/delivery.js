@@ -2,75 +2,52 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const Inventory = require('../models/Inventory');
 const Delivery = require('../models/Delivery');
-// const User = require('../models/User'); 
-
 const deliveryRouter = express.Router();
 
-/**
- * @route   GET /api/delivery/item/:barcode
- * @desc    Fetch an inventory item by its barcode
- * @access  Private (auth required)
- */
+// جلب بيانات القطعة عبر الباركود
 deliveryRouter.get('/item/:barcode', auth, async (req, res) => {
     try {
-        const searchBarcode = req.params.barcode;
-        
-        console.log(`DATABASE_QUERY: Searching for barcode: "${searchBarcode}" with status: "in_stock"`);
-
+        const searchBarcode = req.params.barcode.trim(); // تنظيف الباركود
         const item = await Inventory.findOne({ 
             barcode: searchBarcode, 
             status: 'in_stock' 
         }).populate('uniform');
-
-        console.log("DATABASE_RESULT:", item);
 
         if (!item) { 
             return res.status(404).json({ msg: 'الباركود غير صالح أو القطعة تم تسليمها بالفعل' }); 
         }
         res.json(item);
     } catch (err) { 
-        console.error("ERROR IN GET /item/:barcode :", err);
-        res.status(500).json({ msg: 'حدث خطأ في الخادم، يرجى مراجعة السجلات' }); 
+        res.status(500).json({ msg: 'حدث خطأ في الخادم' }); 
     }
 });
 
-/**
- * @route   POST /api/delivery/record
- * @desc    Record a new delivery and update inventory status
- * @access  Private (auth required)
- */
+// توثيق عملية التسليم
 deliveryRouter.post('/record', auth, async (req, res) => {
     const { barcode, studentName, stage, grade, section, paymentType } = req.body;
-    
     try {
-      // Find the inventory item by barcode and ensure it is in stock
-      const inventoryItem = await Inventory.findOne({ barcode: barcode, status: 'in_stock' });
+      const inventoryItem = await Inventory.findOne({ barcode: barcode.trim(), status: 'in_stock' });
       if (!inventoryItem) {
         return res.status(404).json({ msg: 'هذا الباركود غير صالح أو تم تسليمه مسبقاً' });
       }
 
-      // Create a new delivery record
       const newDelivery = new Delivery({
         inventoryItem: inventoryItem._id,
-        deliveredBy: req.user.id, // Comes from the 'auth' middleware
+        deliveredBy: req.user.id,
         studentName,
         stage,
         grade,
         section,
-        paymentType: paymentType 
+        paymentType 
       });
-      await newDelivery.save();
 
-      // Update the inventory item's status to 'delivered'
-      inventoryItem.status = 'delivered';
+      await newDelivery.save();
+      inventoryItem.status = 'delivered'; // تحديث الحالة
       await inventoryItem.save();
 
       res.status(201).json({ msg: 'تم توثيق عملية التسليم بنجاح' });
-
     } catch (err) {
-      console.error("ERROR IN POST /record :", err); 
-      // التعديل هنا: إرسال تفاصيل الخطأ للواجهة للمساعدة في التشخيص
-      res.status(500).json({ msg: err.message || 'حدث خطأ في الخادم أثناء توثيق التسليم' }); 
+      res.status(500).json({ msg: 'حدث خطأ أثناء توثيق التسليم' }); 
     }
 });
 
