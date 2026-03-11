@@ -87,7 +87,7 @@ function ManageInventoryPage() {
             
             {showScanner && (
                 <Modal show={showScanner} onHide={() => setShowScanner(false)} centered>
-                    <Modal.Header closeButton><Modal.Title>امسح QR Code للحذف</Modal.Title></Modal.Header>
+                    <Modal.Header closeButton><Modal.Title>امسح الباركود للحذف</Modal.Title></Modal.Header>
                     <Modal.Body>
                         <BarcodeScanner onScanSuccess={handleScanSuccess} onScanError={() => setShowScanner(false)} />
                     </Modal.Body>

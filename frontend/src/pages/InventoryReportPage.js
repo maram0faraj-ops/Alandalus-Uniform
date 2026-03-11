@@ -8,8 +8,8 @@ function InventoryReportPage() {
     stage: '', 
     type: '', 
     size: '', 
-    entryDateFrom: '', // <-- تم التعديل هنا
-    entryDateTo: ''      // <-- تم التعديل هنا
+    entryDateFrom: '', 
+    entryDateTo: ''      
   });
   const [filterOptions, setFilterOptions] = useState({ stages: [], types: [], sizes: [] });
   const [loadingSummary, setLoadingSummary] = useState(false);
@@ -20,8 +20,8 @@ function InventoryReportPage() {
         try {
             const response = await api.post('/api/reports/inventory-details', {});
             const data = response.data;
-            const uniqueStages = [...new Set(data.map(item => item.uniform?.stage).filter(Boolean))];
-            const uniqueTypes = [...new Set(data.map(item => item.uniform?.type).filter(Boolean))];
+            const uniqueStages = [...new Set(data.map(item => item.uniform?.stage?.trim()).filter(Boolean))];
+            const uniqueTypes = [...new Set(data.map(item => item.uniform?.type?.trim()).filter(Boolean))];
             const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a,b) => a-b);
             setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
         } catch (error) {
@@ -35,7 +35,6 @@ function InventoryReportPage() {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  // ... دوال تصدير البيانات (handleExportSummary, handleExportDetails) تبقى كما هي ...
   const handleExportSummary = async () => {
     setLoadingSummary(true);
     try {
@@ -51,7 +50,6 @@ function InventoryReportPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير المخزون الملخص');
       XLSX.writeFile(workbook, 'InventorySummary_Report.xlsx');
     } catch (error) {
-      console.error('Failed to export summary report:', error);
       alert('حدث خطأ أثناء تصدير التقرير الملخص.');
     } finally {
       setLoadingSummary(false);
@@ -74,20 +72,18 @@ function InventoryReportPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير المخزون المفصل');
       XLSX.writeFile(workbook, 'InventoryDetails_Report.xlsx');
     } catch (error) {
-      console.error('Failed to export details report:', error);
       alert('حدث خطأ أثناء تصدير التقرير المفصل.');
     } finally {
       setLoadingDetails(false);
     }
   };
 
-
   return (
-    <Container className="mt-4">
+    <Container className="mt-4 text-end" dir="rtl">
       <Card className="p-4 shadow-sm">
         <Card.Title as="h2" className="text-center mb-4">تقارير المخزون</Card.Title>
         <Form>
-          <Row className="mb-3 align-items-end">
+          <Row className="mb-3">
             <Col md={3}>
               <Form.Group>
                 <Form.Label>المرحلة الدراسية</Form.Label>
@@ -115,36 +111,24 @@ function InventoryReportPage() {
                 </Form.Control>
               </Form.Group>
             </Col>
-
-            {/* --- تم التعديل هنا --- */}
             <Col md={3}>
                 <Row>
                     <Col sm={6}>
-                        <Form.Group>
-                            <Form.Label>من تاريخ</Form.Label>
-                            <Form.Control type="date" name="entryDateFrom" onChange={handleInputChange} />
-                        </Form.Group>
+                        <Form.Group><Form.Label>من تاريخ</Form.Label><Form.Control type="date" name="entryDateFrom" onChange={handleInputChange} /></Form.Group>
                     </Col>
                     <Col sm={6}>
-                        <Form.Group>
-                            <Form.Label>إلى تاريخ</Form.Label>
-                            <Form.Control type="date" name="entryDateTo" onChange={handleInputChange} />
-                        </Form.Group>
+                        <Form.Group><Form.Label>إلى تاريخ</Form.Label><Form.Control type="date" name="entryDateTo" onChange={handleInputChange} /></Form.Group>
                     </Col>
                 </Row>
             </Col>
           </Row>
-          <Row className="mt-4">
-            <Col md={6} className="d-grid mb-2 mb-md-0">
+          <Row className="mt-4 d-grid gap-2">
               <Button variant="primary" size="lg" onClick={handleExportSummary} disabled={loadingSummary}>
-                {loadingSummary ? <Spinner as="span" size="sm" /> : '📥 تصدير التقرير الملخص (بالكمية)'}
+                {loadingSummary ? <Spinner as="span" size="sm" /> : '📥 تصدير التقرير الملخص'}
               </Button>
-            </Col>
-            <Col md={6} className="d-grid">
               <Button variant="success" size="lg" onClick={handleExportDetails} disabled={loadingDetails}>
-                {loadingDetails ? <Spinner as="span" size="sm" /> : '📄 تصدير التقرير المفصل (بالباركود)'}
+                {loadingDetails ? <Spinner as="span" size="sm" /> : '📄 تصدير التقرير المفصل'}
               </Button>
-            </Col>
           </Row>
         </Form>
       </Card>
