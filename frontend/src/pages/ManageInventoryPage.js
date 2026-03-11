@@ -11,7 +11,6 @@ function ManageInventoryPage() {
     const [error, setError] = useState('');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [itemsToDelete, setItemsToDelete] = useState([]);
-    const [selectedIds, setSelectedIds] = useState(new Set());
 
     const fetchItems = useCallback(async () => {
         try {
@@ -41,11 +40,12 @@ function ManageInventoryPage() {
     }, [filters, allItems]);
 
     const handleClearAllStock = async () => {
-        if (window.confirm("⚠️ هل أنتِ متأكدة من حذف كامل المخزون؟")) {
+        if (window.confirm("⚠️ هل أنتِ متأكدة من حذف كامل المخزون؟ سيتم مسح جميع الباركودات المسجلة حالياً.")) {
             try {
                 setLoading(true);
                 await api.delete('/api/inventory/clear-all');
                 setAllItems([]);
+                setFilteredItems([]);
                 alert("تم تصفير المخزون بنجاح.");
             } catch (err) {
                 setError('حدث خطأ أثناء تصفير المخزون.');
@@ -83,7 +83,7 @@ function ManageInventoryPage() {
                 </Card.Body>
             </Card>
 
-            <Table striped bordered hover>
+            <Table striped bordered hover responsive>
                 <thead><tr><th>#</th><th>المرحلة</th><th>النوع</th><th>الباركود</th><th>الإجراء</th></tr></thead>
                 <tbody>
                     {filteredItems.map((item, index) => (
@@ -97,6 +97,7 @@ function ManageInventoryPage() {
 
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
                 <Modal.Header closeButton><Modal.Title>تأكيد الحذف</Modal.Title></Modal.Header>
+                <Modal.Body><p>هل أنتِ متأكدة من حذف {itemsToDelete.length} عنصر؟</p></Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>إلغاء</Button>
                     <Button variant="danger" onClick={handleDeleteConfirmed}>حذف</Button>
