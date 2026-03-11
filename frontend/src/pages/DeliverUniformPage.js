@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Container, Form, Button, Row, Col, Alert, Card, Spinner } from 'react-bootstrap';
+import { Container, Form, Button, Row, Col, Alert, Card } from 'react-bootstrap';
 import api from '../api'; 
 import BarcodeScanner from '../components/BarcodeScanner';
 
@@ -35,12 +35,6 @@ function DeliverUniformPage() {
     try {
       const response = await api.get(`/api/delivery/item/${barcode.trim()}`);
       setItem(response.data);
-      if (response.data && response.data.uniform) {
-          setStudentData(prev => ({ 
-            ...prev, 
-            paymentType: response.data.uniform.paymentType || 'مدفوع' 
-          }));
-      }
     } catch (err) {
       setError(err.response?.data?.msg || 'الباركود غير صالح أو تم تسليمه مسبقاً');
     } finally {
@@ -100,7 +94,7 @@ function DeliverUniformPage() {
                   </Col>
                 </Form.Group>
                 <div className="d-grid gap-2">
-                  <Button type="submit" disabled={loading || !barcode}>بحث</Button>
+                  <Button type="submit" disabled={loading || !barcode}>{loading ? 'جاري البحث...' : 'بحث'}</Button>
                   <Button variant="secondary" onClick={() => setShowScanner(true)}>📸 مسح بالكاميرا</Button>
                 </div>
               </Form>
@@ -147,7 +141,7 @@ function DeliverUniformPage() {
                       </Form.Group>
                     </Col>
                   </Row>
-                  <Button variant="success" type="submit" className="w-100" disabled={loading}>توثيق التسليم</Button>
+                  <Button variant="success" type="submit" className="w-100" disabled={loading}>{loading ? 'جاري التوثيق...' : 'توثيق التسليم'}</Button>
                 </Form>
               </Card.Body>
             </Card>
