@@ -87,7 +87,7 @@ function ManageInventoryPage() {
             
             {showScanner && (
                 <Modal show={showScanner} onHide={() => setShowScanner(false)} centered>
-                    <Modal.Header closeButton><Modal.Title>امسح QR Code</Modal.Title></Modal.Header>
+                    <Modal.Header closeButton><Modal.Title>امسح QR Code للحذف</Modal.Title></Modal.Header>
                     <Modal.Body>
                         <BarcodeScanner onScanSuccess={handleScanSuccess} onScanError={() => setShowScanner(false)} />
                     </Modal.Body>
@@ -110,14 +110,14 @@ function ManageInventoryPage() {
                 </Card.Header>
                 <Card.Body>
                     <Row>
-                        <Col md={4}><Form.Select onChange={(e)=>setFilters({...filters, stage: e.target.value})}><option value="all">كل المراحل</option>{filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}</Form.Select></Col>
-                        <Col md={4}><Form.Select onChange={(e)=>setFilters({...filters, type: e.target.value})}><option value="all">كل الأنواع</option>{filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}</Form.Select></Col>
+                        <Col md={4}><Form.Select value={filters.stage} onChange={(e)=>setFilters({...filters, stage: e.target.value})}><option value="all">كل المراحل</option>{filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}</Form.Select></Col>
+                        <Col md={4}><Form.Select value={filters.type} onChange={(e)=>setFilters({...filters, type: e.target.value})}><option value="all">كل الأنواع</option>{filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}</Form.Select></Col>
                         <Col md={4}><Button variant="secondary" className="w-100" onClick={() => setFilters({stage:'all', type:'all', size:'all'})}>إعادة تعيين الفلاتر</Button></Col>
                     </Row>
                 </Card.Body>
             </Card>
 
-            <Table striped bordered hover responsive className="text-center">
+            <Table striped bordered hover responsive className="text-center align-middle">
                 <thead className="bg-dark text-white">
                     <tr>
                         <th><Form.Check type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredItems.map(i => i._id)) : new Set())} checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length} /></th>
