@@ -15,18 +15,25 @@ function ManageInventoryPage() {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [showScanner, setShowScanner] = useState(false);
 
+    // دالة جلب البيانات المحدثة
     const fetchItems = useCallback(async () => {
         try {
+            setLoading(true);
             const response = await api.get('/api/inventory?status=in_stock');
-            const data = response.data;
+            const data = Array.isArray(response.data) ? response.data : [];
             setAllItems(data);
             setFilteredItems(data);
+
+            // استخراج خيارات الفلترة الفريدة
             const uniqueStages = [...new Set(data.map(item => item.uniform?.stage?.trim()).filter(Boolean))];
             const uniqueTypes = [...new Set(data.map(item => item.uniform?.type?.trim()).filter(Boolean))];
             const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
+            
             setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
+            setError('');
         } catch (err) {
-            setError('فشل في جلب بيانات المخزون.');
+            console.error("Fetch Error:", err);
+            setError('فشل في جلب بيانات المخزون. يرجى التأكد من تشغيل السيرفر.');
         } finally {
             setLoading(false);
         }
@@ -34,13 +41,12 @@ function ManageInventoryPage() {
 
     useEffect(() => { fetchItems(); }, [fetchItems]);
 
+    // وظيفة الفلترة المحدثة
     useEffect(() => {
         let result = allItems;
         if (filters.stage !== 'all') result = result.filter(item => item.uniform?.stage?.trim() === filters.stage);
         if (filters.type !== 'all') result = result.filter(item => item.uniform?.type?.trim() === filters.type);
         if (filters.size !== 'all') result = result.filter(item => item.uniform?.size === Number(filters.size));
-        if (filters.startDate) result = result.filter(item => new Date(item.entryDate) >= new Date(filters.startDate).setHours(0,0,0,0));
-        if (filters.endDate) result = result.filter(item => new Date(item.entryDate) <= new Date(filters.endDate).setHours(23,59,59,999));
         setFilteredItems(result);
         setSelectedIds(new Set()); 
     }, [filters, allItems]);
@@ -60,17 +66,6 @@ function ManageInventoryPage() {
         }
     };
 
-    const handleScanSuccess = (scannedBarcode) => {
-        setShowScanner(false);
-        const itemFound = allItems.find(item => item.barcode === scannedBarcode);
-        if (itemFound) {
-            setItemsToDelete([itemFound]);
-            setShowConfirmModal(true);
-        } else {
-            setError('الباركود غير موجود.');
-        }
-    };
-
     const handleDeleteConfirmed = async () => {
         try {
             await Promise.all(itemsToDelete.map(item => api.delete(`/api/inventory/${item._id}`)));
@@ -78,20 +73,15 @@ function ManageInventoryPage() {
             setAllItems(curr => curr.filter(item => !deletedIds.has(item._id)));
             setShowConfirmModal(false);
             setSelectedIds(new Set());
-        } catch (err) { setError('فشل الحذف.'); }
+        } catch (err) { setError('فشل في الحذف.'); }
     };
 
     if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
 
     return (
-        <Container className="mt-5">
+        <Container className="mt-5 text-end" dir="rtl">
             {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
-            {showScanner && (
-                <Modal show={showScanner} onHide={() => setShowScanner(false)} centered>
-                    <Modal.Header closeButton><Modal.Title>امسح QR Code</Modal.Title></Modal.Header>
-                    <Modal.Body><BarcodeScanner onScanSuccess={handleScanSuccess} onScanError={() => setShowScanner(false)} /></Modal.Body>
-                </Modal>
-            )}
+            
             <Card className="mb-4 shadow-sm">
                 <Card.Header className="d-flex justify-content-between align-items-center">
                     <h5>إدارة المخزون</h5>
@@ -114,23 +104,25 @@ function ManageInventoryPage() {
                     </Row>
                 </Card.Body>
             </Card>
+
             <Table striped bordered hover responsive>
                 <thead>
                     <tr>
                         <th><Form.Check type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredItems.map(i => i._id)) : new Set())} checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length} /></th>
-                        <th>#</th><th>المرحلة</th><th>النوع</th><th>الباركود</th><th>الإجراء</th>
+                        <th>#</th><th>المرحلة</th><th>النوع</th><th>المقاس</th><th>الباركود</th><th>الإجراء</th>
                     </tr>
                 </thead>
                 <tbody>
                     {filteredItems.map((item, index) => (
                         <tr key={item._id}>
                             <td><Form.Check type="checkbox" checked={selectedIds.has(item._id)} onChange={() => { const next = new Set(selectedIds); next.has(item._id) ? next.delete(item._id) : next.add(item._id); setSelectedIds(next); }} /></td>
-                            <td>{index + 1}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.barcode}</td>
+                            <td>{index + 1}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td><td>{item.barcode}</td>
                             <td><Button variant="outline-danger" size="sm" onClick={() => {setItemsToDelete([item]); setShowConfirmModal(true);}}>حذف</Button></td>
                         </tr>
                     ))}
                 </tbody>
             </Table>
+            
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
                 <Modal.Header closeButton className="bg-danger text-white"><Modal.Title>تأكيد الحذف</Modal.Title></Modal.Header>
                 <Modal.Body><p>هل أنتِ متأكدة من حذف {itemsToDelete.length} عنصر؟</p></Modal.Body>
