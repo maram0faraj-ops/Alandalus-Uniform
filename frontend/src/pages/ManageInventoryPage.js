@@ -24,46 +24,41 @@ function ManageInventoryPage() {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [showScanner, setShowScanner] = useState(false);
 
+    const fetchItems = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/api/inventory?status=in_stock');
+            const data = response.data;
+            setAllItems(data);
+            setFilteredItems(data);
+
+            const uniqueStages = [...new Set(data.map(item => item.uniform?.stage?.trim()).filter(Boolean))];
+            const uniqueTypes = [...new Set(data.map(item => item.uniform?.type?.trim()).filter(Boolean))];
+            const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
+            
+            setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
+        } catch (err) {
+            setError('فشل في جلب بيانات المخزون.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchItems = async () => {
-            try {
-                const response = await api.get('/api/inventory?status=in_stock');
-                const data = response.data;
-                setAllItems(data);
-                setFilteredItems(data);
-
-                // --- التعديل هنا: استخدام .trim() لتوحيد الأسماء المكررة ---
-                const uniqueStages = [...new Set(data.map(item => item.uniform?.stage?.trim()).filter(Boolean))];
-                const uniqueTypes = [...new Set(data.map(item => item.uniform?.type?.trim()).filter(Boolean))];
-                // --------------------------------------------------------
-
-                const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
-                setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
-            } catch (err) {
-                setError('فشل في جلب بيانات المخزون.');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchItems();
     }, []);
 
     useEffect(() => {
         let result = allItems;
-
-        // --- التعديل هنا: استخدام .trim() عند المقارنة لدمج البيانات ---
         if (filters.stage !== 'all') {
             result = result.filter(item => item.uniform?.stage?.trim() === filters.stage);
         }
         if (filters.type !== 'all') {
             result = result.filter(item => item.uniform?.type?.trim() === filters.type);
         }
-        // -----------------------------------------------------------
-        
         if (filters.size !== 'all') {
             result = result.filter(item => item.uniform?.size === Number(filters.size));
         }
-
         if (filters.startDate) {
             const start = new Date(filters.startDate);
             start.setHours(0, 0, 0, 0); 
@@ -74,10 +69,26 @@ function ManageInventoryPage() {
             end.setHours(23, 59, 59, 999); 
             result = result.filter(item => new Date(item.entryDate) <= end);
         }
-
         setFilteredItems(result);
         setSelectedIds(new Set()); 
     }, [filters, allItems]);
+
+    // --- دالة حذف كامل المخزون ---
+    const handleClearAll = async () => {
+        if (window.confirm("⚠️ هل أنتِ متأكدة من حذف كامل المخزون؟ سيتم مسح جميع الباركودات المسجلة حالياً ولا يمكن التراجع.")) {
+            try {
+                setLoading(true);
+                await api.delete('/api/inventory/clear-all');
+                setAllItems([]);
+                setFilteredItems([]);
+                alert("تم تصفير المخزون بنجاح.");
+            } catch (err) {
+                setError('حدث خطأ أثناء محاولة تصفير المخزون.');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
     const handleScanSuccess = (scannedBarcode) => {
         setShowScanner(false);
@@ -92,7 +103,6 @@ function ManageInventoryPage() {
     const handleScanError = (err) => {
         setShowScanner(false);
         setError('فشل في قراءة الباركود، يرجى المحاولة مرة أخرى.');
-        console.error(err);
     };
 
     const handleFilterChange = (e) => {
@@ -134,23 +144,14 @@ function ManageInventoryPage() {
 
     const handleDeleteConfirmed = async () => {
         if (itemsToDelete.length === 0) return;
-        
         try {
             const deletePromises = itemsToDelete.map(item => api.delete(`/api/inventory/${item._id}`));
             await Promise.all(deletePromises);
-
             const deletedIds = new Set(itemsToDelete.map(i => i._id));
             setAllItems(current => current.filter(item => !deletedIds.has(item._id)));
-            setFilteredItems(current => current.filter(item => !deletedIds.has(item._id)));
-            
-            const newSelectedIds = new Set(selectedIds);
-            itemsToDelete.forEach(item => newSelectedIds.delete(item._id));
-            setSelectedIds(newSelectedIds);
-
             handleCloseConfirmModal();
         } catch (err) {
-            setError('فشل في حذف بعض العناصر. يرجى المحاولة مرة أخرى.');
-            console.error(err);
+            setError('فشل في حذف بعض العناصر.');
         }
     };
 
@@ -174,16 +175,10 @@ function ManageInventoryPage() {
                         <div className="d-flex justify-content-between align-items-center">
                             <h5>بحث وتصفية</h5>
                             <div>
+                                <Button variant="dark" size="sm" onClick={handleClearAll} className="me-2">🛑 مسح كامل المخزون</Button>
                                 <Button variant="secondary" size="sm" onClick={resetFilters} className="me-2">إعادة تعيين</Button>
                                 {selectedIds.size > 0 && (
-                                    <Button 
-                                        variant="danger" 
-                                        size="sm"
-                                        onClick={() => {
-                                            const items = filteredItems.filter(i => selectedIds.has(i._id));
-                                            handleShowConfirmModal(items);
-                                        }}
-                                    >
+                                    <Button variant="danger" size="sm" onClick={() => handleShowConfirmModal(filteredItems.filter(i => selectedIds.has(i._id)))}>
                                         حذف المحدد ({selectedIds.size})
                                     </Button>
                                 )}
@@ -195,22 +190,11 @@ function ManageInventoryPage() {
                             <Col md={3}><Form.Group><Form.Label>المرحلة</Form.Label><Form.Select name="stage" value={filters.stage} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}</Form.Select></Form.Group></Col>
                             <Col md={3}><Form.Group><Form.Label>نوع الزي</Form.Label><Form.Select name="type" value={filters.type} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.types.map(type => <option key={type} value={type}>{type}</option>)}</Form.Select></Form.Group></Col>
                             <Col md={3}><Form.Group><Form.Label>المقاس</Form.Label><Form.Select name="size" value={filters.size} onChange={handleFilterChange}><option value="all">الكل</option>{filterOptions.sizes.map(size => <option key={size} value={size}>{size}</option>)}</Form.Select></Form.Group></Col>
-                            <Col md={3} className="d-flex align-items-end"><Button variant="primary" className="w-100" onClick={() => setShowScanner(true)}>📸 مسح باركود للحذف</Button></Col>
+                            <Col md={3} className="d-flex align-items-end"><Button variant="primary" className="w-100" onClick={() => setShowScanner(true)}>📸 مسح باركود</Button></Col>
                         </Row>
-                        
                         <Row>
-                            <Col md={4}>
-                                <Form.Group>
-                                    <Form.Label>من تاريخ</Form.Label>
-                                    <Form.Control type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group>
-                                    <Form.Label>إلى تاريخ</Form.Label>
-                                    <Form.Control type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} />
-                                </Form.Group>
-                            </Col>
+                            <Col md={4}><Form.Group><Form.Label>من تاريخ</Form.Label><Form.Control type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} /></Form.Group></Col>
+                            <Col md={4}><Form.Group><Form.Label>إلى تاريخ</Form.Label><Form.Control type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} /></Form.Group></Col>
                         </Row>
                     </Card.Body>
                 </Card>
@@ -218,26 +202,14 @@ function ManageInventoryPage() {
                 <Table striped bordered hover responsive>
                     <thead>
                         <tr>
-                            <th style={{width: '40px'}}>
-                                <Form.Check 
-                                    type="checkbox"
-                                    onChange={handleSelectAll}
-                                    checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
-                                />
-                            </th>
+                            <th style={{width: '40px'}}><Form.Check type="checkbox" onChange={handleSelectAll} checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length} /></th>
                             <th>#</th><th>المرحلة</th><th>نوع الزي</th><th>المقاس</th><th>الباركود</th><th>تاريخ ووقت الإضافة</th><th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredItems.map((item, index) => (
                             <tr key={item._id}>
-                                <td>
-                                    <Form.Check 
-                                        type="checkbox"
-                                        checked={selectedIds.has(item._id)}
-                                        onChange={() => handleSelectOne(item._id)}
-                                    />
-                                </td>
+                                <td><Form.Check type="checkbox" checked={selectedIds.has(item._id)} onChange={() => handleSelectOne(item._id)} /></td>
                                 <td>{index + 1}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td><td>{item.barcode}</td>
                                 <td>{new Date(item.entryDate).toLocaleString('ar-SA')}</td>
                                 <td><Button variant="outline-danger" size="sm" onClick={() => handleShowConfirmModal([item])}>حذف</Button></td>
@@ -248,14 +220,9 @@ function ManageInventoryPage() {
             </Container>
 
             <Modal show={showConfirmModal} onHide={handleCloseConfirmModal} centered>
-                <Modal.Header closeButton className="bg-danger text-white">
-                    <Modal.Title>تأكيد الحذف</Modal.Title>
-                </Modal.Header>
+                <Modal.Header closeButton className="bg-danger text-white"><Modal.Title>تأكيد الحذف</Modal.Title></Modal.Header>
                 <Modal.Body>
-                    <p>هل أنت متأكد من رغبتك في حذف <strong>{itemsToDelete.length}</strong> عنصر/عناصر؟</p>
-                    {itemsToDelete.length === 1 && (
-                         <p>الباركود: <strong>{itemsToDelete[0].barcode}</strong></p>
-                    )}
+                    <p>هل أنتِ متأكدة من حذف <strong>{itemsToDelete.length}</strong> عنصر؟</p>
                     <Alert variant="warning">لا يمكن التراجع عن هذا الإجراء.</Alert>
                 </Modal.Body>
                 <Modal.Footer>

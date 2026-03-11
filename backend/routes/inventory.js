@@ -8,7 +8,10 @@ const Inventory = require('../models/Inventory');
 
 // --- POST /api/inventory/add ---
 inventoryRouter.post('/add', auth, async (req, res) => {
-    const { stage, type, size, quantity } = req.body;
+    let { stage, type, size, quantity } = req.body; 
+    if (stage) stage = stage.trim();
+    if (type) type = type.trim();
+
     if (!Number.isInteger(quantity) || quantity <= 0) {
         return res.status(400).json({ msg: 'الكمية يجب أن تكون رقماً صحيحاً موجباً' });
     }
@@ -18,8 +21,17 @@ inventoryRouter.post('/add', auth, async (req, res) => {
             uniform = new Uniform({ stage, type, size });
             await uniform.save();
         }
-        const stageCodes = {'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', ' ابتدائي بنات': 'PGB', ' ابتدائي بنين': 'PBB', 'متوسط': 'INT', 'ثانوي': 'SEC'};
+        
+        const stageCodes = {
+            'رياض أطفال بنات': 'KGG', 
+            'رياض أطفال بنين': 'KGB', 
+            'ابتدائي بنات': 'PGB', 
+            'ابتدائي بنين': 'PBB', 
+            'متوسط': 'INT', 
+            'ثانوي': 'SEC'
+        };
         const typeCodes = {'رسمي': 'O', 'رياضي': 'S', 'جاكيت': 'J'};
+        
         const stageCode = stageCodes[stage] || 'UNK';
         const typeCode = typeCodes[type] || 'X';
         const newItems = [];
@@ -35,7 +47,7 @@ inventoryRouter.post('/add', auth, async (req, res) => {
     }
 });
 
-// --- GET /api/inventory/ (هذا هو الكود الذي كان مفقودًا) ---
+// --- GET /api/inventory/ ---
 inventoryRouter.get('/', auth, async (req, res) => {
     try {
         const query = {};
@@ -46,6 +58,18 @@ inventoryRouter.get('/', auth, async (req, res) => {
             .populate('uniform')
             .sort({ entryDate: -1 });
         res.json(items);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// --- جديد: DELETE /api/inventory/clear-all ---
+// يحذف كافة العناصر الموجودة حالياً في المخزون (In Stock)
+inventoryRouter.delete('/clear-all', auth, async (req, res) => {
+    try {
+        const result = await Inventory.deleteMany({ status: 'in_stock' });
+        res.json({ msg: `تم تصفير المخزون بنجاح. تم حذف ${result.deleted_count} عنصر.` });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

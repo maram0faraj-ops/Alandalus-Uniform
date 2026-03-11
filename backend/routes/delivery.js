@@ -2,7 +2,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const Inventory = require('../models/Inventory');
 const Delivery = require('../models/Delivery');
-const User = require('../models/User'); // قد تحتاج هذا النموذج إذا كنت تستخدم بيانات المستخدم
+// const User = require('../models/User'); 
 
 const deliveryRouter = express.Router();
 
@@ -49,7 +49,7 @@ deliveryRouter.post('/record', auth, async (req, res) => {
         return res.status(404).json({ msg: 'هذا الباركود غير صالح أو تم تسليمه مسبقاً' });
       }
 
-      // Create a new delivery record, including the paymentType from the request
+      // Create a new delivery record
       const newDelivery = new Delivery({
         inventoryItem: inventoryItem._id,
         deliveredBy: req.user.id, // Comes from the 'auth' middleware
@@ -57,7 +57,7 @@ deliveryRouter.post('/record', auth, async (req, res) => {
         stage,
         grade,
         section,
-        paymentType: paymentType // Save the payment type with the delivery record
+        paymentType: paymentType 
       });
       await newDelivery.save();
 
@@ -69,7 +69,8 @@ deliveryRouter.post('/record', auth, async (req, res) => {
 
     } catch (err) {
       console.error("ERROR IN POST /record :", err); 
-      res.status(500).json({ msg: 'حدث خطأ في الخادم أثناء توثيق التسليم' }); 
+      // التعديل هنا: إرسال تفاصيل الخطأ للواجهة للمساعدة في التشخيص
+      res.status(500).json({ msg: err.message || 'حدث خطأ في الخادم أثناء توثيق التسليم' }); 
     }
 });
 

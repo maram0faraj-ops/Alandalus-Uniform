@@ -5,18 +5,15 @@ const Inventory = require('../models/Inventory');
 const Uniform = require('../models/Uniform');
 const ExcelJS = require('exceljs');
 
-// Helper function to build date queries - UPDATED VERSION
+// Helper function to build date queries
 const buildDateQuery = (from, to, fieldName) => {
     const dateQuery = {};
     if (from) {
-        // Force parsing the date as UTC to avoid timezone shifts
         dateQuery.$gte = new Date(`${from}T00:00:00.000Z`);
     }
     if (to) {
-        // Force parsing the date as UTC and set it to the end of the day
         dateQuery.$lte = new Date(`${to}T23:59:59.999Z`);
     }
-    // Return null if no dates are provided
     return Object.keys(dateQuery).length > 0 ? { [fieldName]: dateQuery } : null;
 };
 
@@ -28,15 +25,13 @@ const buildDateQuery = (from, to, fieldName) => {
 const buildInventoryQuery = (filters) => {
     const { stage, type, size, entryDateFrom, entryDateTo } = filters;
     
-    // The pipeline now starts by filtering for 'in_stock' items ONLY.
     const pipeline = [
-        { $match: { status: 'in_stock' } } // Filter for available items
+        { $match: { status: 'in_stock' } } 
     ];
 
-    // 1. Add date filtering if dates are provided
+    // 1. Add date filtering
     const dateQuery = buildDateQuery(entryDateFrom, entryDateTo, 'entryDate');
     if (dateQuery) {
-        // We push the date match into the existing $match stage for efficiency
         Object.assign(pipeline[0].$match, dateQuery);
     }
 
@@ -48,9 +43,13 @@ const buildInventoryQuery = (filters) => {
 
     // 3. Secondary match for uniform properties (stage, type, size)
     const uniformMatch = {};
-    if (stage) uniformMatch['uniform.stage'] = stage;
-    if (type) uniformMatch['uniform.type'] = type;
-    if (size) uniformMatch['uniform.size'] = Number(size); // Convert size to number
+    
+    // --- تعديل: استخدام Regex لضمان تطابق النص حتى مع وجود مسافات ---
+    if (stage) uniformMatch['uniform.stage'] = { $regex: stage.trim(), $options: 'i' };
+    if (type) uniformMatch['uniform.type'] = { $regex: type.trim(), $options: 'i' };
+    // -----------------------------------------------------------------
+    
+    if (size) uniformMatch['uniform.size'] = Number(size); 
 
     if (Object.keys(uniformMatch).length > 0) {
         pipeline.push({ $match: uniformMatch });
@@ -83,6 +82,7 @@ router.post('/delivery-export', async (req, res) => {
         ];
         
         if (stage) {
+            // هنا الكود كان يستخدم Regex بالفعل، وهو ممتاز، لا يحتاج تعديل جوهري
             pipeline.push({ $match: { 'uniformDetails.stage': { $regex: stage.trim(), $options: 'i' } } });
         }
 
