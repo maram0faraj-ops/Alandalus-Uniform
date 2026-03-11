@@ -6,6 +6,23 @@ const inventoryRouter = express.Router();
 const Uniform = require('../models/Uniform');
 const Inventory = require('../models/Inventory');
 
+// --- GET /api/inventory/ ---
+inventoryRouter.get('/', auth, async (req, res) => {
+    try {
+        const query = {};
+        if (req.query.status) {
+            query.status = req.query.status;
+        }
+        const items = await Inventory.find(query)
+            .populate('uniform')
+            .sort({ entryDate: -1 });
+        res.json(items);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // --- POST /api/inventory/add ---
 inventoryRouter.post('/add', auth, async (req, res) => {
     let { stage, type, size, quantity } = req.body; 
@@ -47,48 +64,32 @@ inventoryRouter.post('/add', auth, async (req, res) => {
     }
 });
 
-// --- GET /api/inventory/ ---
-inventoryRouter.get('/', auth, async (req, res) => {
-    try {
-        const query = {};
-        if (req.query.status) {
-            query.status = req.query.status;
-        }
-        const items = await Inventory.find(query)
-            .populate('uniform')
-            .sort({ entryDate: -1 });
-        res.json(items);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-// --- جديد: DELETE /api/inventory/clear-all ---
-// يحذف كافة العناصر الموجودة حالياً في المخزون (In Stock)
+// --- جديد وحرج: DELETE /api/inventory/clear-all ---
+// يجب أن يكون هذا المسار قبل المسار الذي يحتوي على :id
 inventoryRouter.delete('/clear-all', auth, async (req, res) => {
     try {
+        // حذف العناصر التي لم تسلم بعد فقط (in_stock)
         const result = await Inventory.deleteMany({ status: 'in_stock' });
-        res.json({ msg: `تم تصفير المخزون بنجاح. تم حذف ${result.deleted_count} عنصر.` });
+        res.json({ msg: `تم تصفير المخزون بنجاح. تم حذف ${result.deleted_count} قطعة.` });
     } catch (err) {
-        console.error(err.message);
+        console.error("Error clearing inventory:", err.message);
         res.status(500).send('Server Error');
     }
 });
 
 // --- DELETE /api/inventory/:id ---
- inventoryRouter.delete('/:id', auth, async (req, res) => {
+inventoryRouter.delete('/:id', auth, async (req, res) => {
     try {
         const item = await Inventory.findById(req.params.id);
-         if (!item) {
+        if (!item) {
             return res.status(404).json({ msg: 'Item not found' });
         }
         await item.deleteOne();
-         res.json({ msg: 'Item removed successfully' });
+        res.json({ msg: 'Item removed successfully' });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
     }
- });
+});
 
 module.exports = inventoryRouter;
