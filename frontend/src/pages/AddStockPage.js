@@ -1,74 +1,49 @@
 import React, { useState } from 'react';
-import { Container, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import api from '../api';
 
 function AddStockPage() {
-    const [formData, setFormData] = useState({
-        stage: 'ابتدائي بنات',
-        type: 'رسمي',
-        size: 32,
-        quantity: 1,
-    });
+    const [formData, setFormData] = useState({ stage: 'ابتدائي بنات', type: 'رسمي', size: 32, quantity: 1 });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const stages = ['رياض أطفال بنات', 'رياض أطفال بنين', 'ابتدائي بنات', 'ابتدائي بنين', 'متوسط', 'ثانوي'];
     const types = ['رسمي', 'رياضي', 'جاكيت'];
-    // تحديث النطاق إلى 100
-    const sizes = Array.from({ length: (100 - 10) + 1 }, (_, i) => 10 + i); 
-
-    const handleChange = (e) => {
-        setMessage('');
-        setError('');
-        const { name, value } = e.target;
-        const finalValue = name === 'quantity' ? parseInt(value, 10) : value;
-        setFormData({ ...formData, [name]: finalValue });
-    };
+    const sizes = Array.from({ length: 91 }, (_, i) => 10 + i); // من 10 إلى 100
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setMessage('');
-        setError('');
         try {
             const response = await api.post('/api/inventory/add', formData);
             setMessage(response.data.msg);
+            setError('');
         } catch (err) {
-            setError(err.response?.data?.msg || 'حدث خطأ ما، يرجى المحاولة مرة أخرى.');
-        } finally {
-            setLoading(false);
-        }
+            setError(err.response?.data?.msg || 'فشل الاتصال بالسيرفر، تأكدي من تحديث الـ Backend');
+        } finally { setLoading(false); }
     };
 
     return (
-        <Container className="mt-5">
+        <Container className="mt-5 text-end" dir="rtl">
             <Row className="justify-content-md-center">
                 <Col md={8}>
-                    <h2 className="text-center mb-4">إضافة مخزون جديد</h2>
-                    {message && <Alert variant="success" onClose={() => setMessage('')} dismissible>{message}</Alert>}
-                    {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+                    <h2 className="mb-4">إضافة مخزون جديد</h2>
+                    {message && <Alert variant="success">{message}</Alert>}
+                    {error && <Alert variant="danger">{error}</Alert>}
                     <Form onSubmit={handleSubmit}>
                         <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>المرحلة الدراسية</Form.Label>
+                            <Form.Label column sm={3}>المرحلة</Form.Label>
                             <Col sm={9}>
-                                <Form.Select name="stage" value={formData.stage} onChange={handleChange} required>
+                                <Form.Select value={formData.stage} onChange={(e) => setFormData({...formData, stage: e.target.value})}>
                                     {stages.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Col>
-                        </Form.Group>
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>نوع الزي</Form.Label>
-                            <Col sm={9}>
-                                <Form.Select name="type" value={formData.type} onChange={handleChange} required>
-                                    {types.map(t => <option key={t} value={t}>{t}</option>)}
                                 </Form.Select>
                             </Col>
                         </Form.Group>
                         <Form.Group as={Row} className="mb-3">
                             <Form.Label column sm={3}>المقاس</Form.Label>
                             <Col sm={9}>
-                                <Form.Select name="size" value={formData.size} onChange={handleChange} required>
+                                <Form.Select value={formData.size} onChange={(e) => setFormData({...formData, size: parseInt(e.target.value)})}>
                                     {sizes.map(s => <option key={s} value={s}>{s}</option>)}
                                 </Form.Select>
                             </Col>
@@ -76,19 +51,16 @@ function AddStockPage() {
                         <Form.Group as={Row} className="mb-3">
                             <Form.Label column sm={3}>الكمية</Form.Label>
                             <Col sm={9}>
-                                <Form.Control type="number" name="quantity" value={formData.quantity} onChange={handleChange} min="1" required />
+                                <Form.Control type="number" value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})} min="1" />
                             </Col>
                         </Form.Group>
-                        <div className="d-grid mt-4">
-                            <Button variant="primary" type="submit" disabled={loading}>
-                                {loading ? <><Spinner as="span" animation="border" size="sm" /> جاري الإضافة...</> : 'إضافة للمخزون'}
-                            </Button>
-                        </div>
+                        <Button variant="primary" type="submit" className="w-100" disabled={loading}>
+                            {loading ? 'جاري الإضافة...' : 'إضافة للمخزون'}
+                        </Button>
                     </Form>
                 </Col>
             </Row>
         </Container>
     );
 }
-
 export default AddStockPage;

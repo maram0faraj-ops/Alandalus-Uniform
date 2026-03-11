@@ -15,7 +15,7 @@ const UniformSchema = new mongoose.Schema({
     type: Number, 
     required: true, 
     min: 10, 
-    max: 100 // تحديث الحد الأقصى إلى 100
+    max: 100 // تم التحديث إلى 100
   }
 });
 

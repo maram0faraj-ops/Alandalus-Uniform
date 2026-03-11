@@ -18,11 +18,7 @@ inventoryRouter.post('/add', auth, async (req, res) => {
             await uniform.save();
         }
         
-        const stageCodes = {
-            'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', 
-            'ابتدائي بنات': 'PGB', 'ابتدائي بنين': 'PBB', 
-            'متوسط': 'INT', 'ثانوي': 'SEC'
-        };
+        const stageCodes = { 'رياض أطفال بنات': 'KGG', 'رياض أطفال بنين': 'KGB', 'ابتدائي بنات': 'PGB', 'ابتدائي بنين': 'PBB', 'متوسط': 'INT', 'ثانوي': 'SEC' };
         const typeCodes = {'رسمي': 'O', 'رياضي': 'S', 'جاكيت': 'J'};
         
         const stageCode = stageCodes[stage] || 'UNK';
@@ -35,7 +31,7 @@ inventoryRouter.post('/add', auth, async (req, res) => {
         await Inventory.insertMany(newItems);
         res.status(201).json({ msg: `تم إضافة ${quantity} قطعة للمخزون بنجاح` });
     } catch (err) {
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -45,9 +41,8 @@ inventoryRouter.delete('/clear-all', auth, async (req, res) => {
         const result = await Inventory.deleteMany({ status: 'in_stock' });
         res.json({ msg: `تم تصفير المخزون بنجاح. تم حذف ${result.deleted_count} عنصر.` });
     } catch (err) {
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
-// مسارات الحذف الفردي والجلب تبقى كما هي...
 module.exports = inventoryRouter;
