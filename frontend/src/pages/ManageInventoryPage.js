@@ -17,14 +17,18 @@ function ManageInventoryPage() {
 
     const fetchItems = useCallback(async () => {
         try {
+            setLoading(true);
             const response = await api.get('/api/inventory?status=in_stock');
             const data = Array.isArray(response.data) ? response.data : [];
             setAllItems(data);
             setFilteredItems(data);
+            
             const uniqueStages = [...new Set(data.map(item => item.uniform?.stage?.trim()).filter(Boolean))];
             const uniqueTypes = [...new Set(data.map(item => item.uniform?.type?.trim()).filter(Boolean))];
             const uniqueSizes = [...new Set(data.map(item => item.uniform?.size).filter(Boolean))].sort((a, b) => a - b);
+            
             setFilterOptions({ stages: uniqueStages, types: uniqueTypes, sizes: uniqueSizes });
+            setError('');
         } catch (err) {
             setError('فشل في جلب بيانات المخزون.');
         } finally {
@@ -87,7 +91,7 @@ function ManageInventoryPage() {
             
             {showScanner && (
                 <Modal show={showScanner} onHide={() => setShowScanner(false)} centered>
-                    <Modal.Header closeButton><Modal.Title>امسح QR Code للحذف</Modal.Title></Modal.Header>
+                    <Modal.Header closeButton><Modal.Title>امسح الباركود للحذف</Modal.Title></Modal.Header>
                     <Modal.Body>
                         <BarcodeScanner onScanSuccess={handleScanSuccess} onScanError={() => setShowScanner(false)} />
                     </Modal.Body>
