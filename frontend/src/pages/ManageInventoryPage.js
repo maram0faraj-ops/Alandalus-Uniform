@@ -78,21 +78,25 @@ function ManageInventoryPage() {
     const handleDeleteConfirmed = async () => {
     try {
         setLoading(true);
+        setError('');
+        
+        // تحضير مصفوفة المعرفات
         const idsArray = itemsToDelete.map(item => item._id);
         
-        // استخدام المسار الجماعي الجديد
-        await api.delete('/api/inventory/delete-multiple', { data: { ids: idsArray } });
+        // إرسال طلب حذف واحد لكل العناصر
+        await api.delete('/api/inventory/bulk-delete', { data: { ids: idsArray } });
         
+        // تحديث الواجهة محلياً بعد نجاح الحذف
         const deletedIdsSet = new Set(idsArray);
-        setAllItems(curr => curr.filter(item => !deletedIdsSet.has(item._id)));
+        setAllItems(currentItems => currentItems.filter(item => !deletedIdsSet.has(item._id)));
         
         setShowConfirmModal(false);
         setSelectedIds(new Set());
         setItemsToDelete([]);
-        setError('');
+        alert('تم حذف العناصر المحددة بنجاح.');
     } catch (err) {
-        console.error(err);
-        setError('فشل في حذف العناصر المحددة. يرجى المحاولة مرة أخرى.');
+        console.error("Deletion Error:", err);
+        setError(err.response?.data?.msg || 'فشل في حذف العناصر المحددة. يرجى المحاولة مرة أخرى.');
     } finally {
         setLoading(false);
     }
