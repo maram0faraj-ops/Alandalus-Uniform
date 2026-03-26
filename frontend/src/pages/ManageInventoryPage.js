@@ -76,14 +76,27 @@ function ManageInventoryPage() {
     };
 
     const handleDeleteConfirmed = async () => {
-        try {
-            await Promise.all(itemsToDelete.map(item => api.delete(`/api/inventory/${item._id}`)));
-            const deletedIds = new Set(itemsToDelete.map(i => i._id));
-            setAllItems(curr => curr.filter(item => !deletedIds.has(item._id)));
-            setShowConfirmModal(false);
-            setSelectedIds(new Set());
-        } catch (err) { setError('فشل الحذف.'); }
-    };
+    try {
+        setLoading(true);
+        const idsArray = itemsToDelete.map(item => item._id);
+        
+        // استخدام المسار الجماعي الجديد
+        await api.delete('/api/inventory/delete-multiple', { data: { ids: idsArray } });
+        
+        const deletedIdsSet = new Set(idsArray);
+        setAllItems(curr => curr.filter(item => !deletedIdsSet.has(item._id)));
+        
+        setShowConfirmModal(false);
+        setSelectedIds(new Set());
+        setItemsToDelete([]);
+        setError('');
+    } catch (err) {
+        console.error(err);
+        setError('فشل في حذف العناصر المحددة. يرجى المحاولة مرة أخرى.');
+    } finally {
+        setLoading(false);
+    }
+};
 
     if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
 

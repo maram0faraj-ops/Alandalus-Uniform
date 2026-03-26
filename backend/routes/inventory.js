@@ -28,6 +28,19 @@ inventoryRouter.delete('/clear-all', auth, async (req, res) => {
     } catch (err) {
         res.status(500).send('Server Error');
     }
+
+    // مسار حذف مجموعة من العناصر المحددة
+inventoryRouter.delete('/delete-multiple', auth, async (req, res) => {
+    try {
+        const { ids } = req.body; // مصفوفة المعرفات المرسلة من الواجهة
+        if (!ids || ids.length === 0) return res.status(400).json({ msg: 'لم يتم تحديد عناصر' });
+
+        await Inventory.deleteMany({ _id: { $in: ids } });
+        res.json({ msg: `تم حذف ${ids.length} عنصر بنجاح` });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
 });
 
 module.exports = inventoryRouter;
