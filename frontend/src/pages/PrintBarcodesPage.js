@@ -40,7 +40,6 @@ function PrintBarcodesPage() {
         if (filters.size !== 'all') result = result.filter(item => item.uniform?.size === Number(filters.size));
         if (filters.date) result = result.filter(item => new Date(item.entryDate).toISOString().split('T')[0] === filters.date);
         setFilteredItems(result);
-        setSelectedIds(new Set()); 
     }, [filters, allItems]);
 
     const handleSelectOne = (id) => {
@@ -59,6 +58,7 @@ function PrintBarcodesPage() {
 
     return (
         <Container className="mt-4 no-print-container" dir="rtl">
+            {/* واجهة المستخدم (تظهر فقط في المتصفح) */}
             <div className="no-print">
                 <h2 className="text-center mb-4 fw-bold">نظام إدارة ملصقات الزي</h2>
                 
@@ -104,8 +104,11 @@ function PrintBarcodesPage() {
                 <Row xs={1} md={2} lg={4} className="g-4 px-2">
                     {filteredItems.map((item) => (
                         <Col key={item._id}>
-                            <Card className={`h-100 text-center p-3 border-2 shadow-sm transition-card ${selectedIds.has(item._id) ? 'border-primary bg-light' : 'border-light'}`} 
-                                  onClick={() => handleSelectOne(item._id)} style={{ cursor: 'pointer', borderRadius: '15px' }}>
+                            <Card 
+                                className={`h-100 text-center p-3 border-2 shadow-sm transition-card ${selectedIds.has(item._id) ? 'border-primary bg-light' : 'border-light'}`} 
+                                onClick={() => handleSelectOne(item._id)} 
+                                style={{ cursor: 'pointer', borderRadius: '15px' }}
+                            >
                                 <div className="d-flex justify-content-center mb-2">
                                     <Form.Check type="checkbox" checked={selectedIds.has(item._id)} readOnly />
                                 </div>
@@ -122,21 +125,79 @@ function PrintBarcodesPage() {
                 </Row>
             </div>
 
+            {/* منطقة الطباعة المخصصة (تظهر فقط عند الطباعة والمعاينة) */}
             <div className="print-area">
                 <style>
                     {`
                     @media print {
-                        @page { size: letter; margin: 0.5in 0.15in; }
-                        body { direction: rtl; background: white !important; }
-                        .no-print-container { display: none !important; }
-                        .print-area { display: block !important; width: 100%; }
-                        .labels-grid { display: grid; grid-template-columns: 4in 4in; grid-auto-rows: 2in; column-gap: 0.125in; row-gap: 0; justify-content: center; }
-                        .label-item { width: 4in; height: 2in; padding: 0.15in; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-inside: avoid; border: 0.1pt solid transparent; }
-                        .school-title { font-size: 14pt; font-weight: bold; margin-bottom: 2pt; color: #001f3f; }
-                        .qr-print { width: 1.1in !important; height: 1.1in !important; }
-                        .barcode-txt { font-size: 10pt; font-family: monospace; font-weight: bold; margin-top: 2pt; }
-                        .details { font-size: 9pt; margin-top: 1pt; }
+                        @page { 
+                            size: letter portrait; 
+                            margin: 0.5in 0.15in; 
+                        }
+                        
+                        /* إخفاء واجهة الموقع تماماً */
+                        .no-print, .no-print-container, .navbar, header, footer { 
+                            display: none !important; 
+                        }
+                        
+                        /* إظهار منطقة الطباعة فقط */
+                        .print-area { 
+                            display: block !important; 
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            direction: rtl;
+                        }
+
+                        .labels-grid { 
+                            display: grid !important; 
+                            grid-template-columns: 4in 4in !important; 
+                            grid-auto-rows: 2in !important; 
+                            column-gap: 0.125in !important; 
+                            row-gap: 0 !important; 
+                            justify-content: center; 
+                        }
+
+                        .label-item { 
+                            width: 4in !important; 
+                            height: 2in !important; 
+                            padding: 0.15in; 
+                            text-align: center; 
+                            display: flex !important; 
+                            flex-direction: column !important; 
+                            align-items: center !important; 
+                            justify-content: center !important; 
+                            page-break-inside: avoid; 
+                        }
+
+                        .school-title { 
+                            font-size: 14pt !important; 
+                            font-weight: bold !important; 
+                            margin-bottom: 2pt; 
+                            color: #001f3f; 
+                        }
+
+                        .qr-print { 
+                            width: 1.1in !important; 
+                            height: 1.1in !important; 
+                        }
+
+                        .barcode-txt { 
+                            font-size: 10pt !important; 
+                            font-family: monospace !important; 
+                            font-weight: bold !important; 
+                            margin-top: 2pt; 
+                        }
+
+                        .details { 
+                            font-size: 9pt !important; 
+                            margin-top: 1pt; 
+                        }
                     }
+                    
+                    /* إخفاء منطقة الطباعة في المتصفح العادي */
+                    .print-area { display: none; }
                     `}
                 </style>
                 <div className="labels-grid">
