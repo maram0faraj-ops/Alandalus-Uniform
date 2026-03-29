@@ -141,7 +141,7 @@ function PrintBarcodesPage() {
                 </Table>
             </div>
 
-            {/* منطقة الطباعة المخصصة لـ MACO ML-1000 (10 ملصقات، 2" × 4") */}
+            {/* إعدادات الطباعة المخصصة لـ ML-1000 (10 ملصقات، 2" × 4") */}
             <div className="print-area">
                 <style>
                     {`
@@ -166,7 +166,7 @@ function PrintBarcodesPage() {
                         .label-item {
                             width: 4in !important;
                             height: 2in !important;
-                            padding: 0.15in !important;
+                            padding: 0.1in !important;
                             box-sizing: border-box !important;
                             display: flex !important;
                             flex-direction: column !important;
@@ -181,12 +181,12 @@ function PrintBarcodesPage() {
                             width: 1.1in !important; 
                             height: 1.1in !important; 
                             display: block !important;
-                            margin: 2pt auto !important; 
+                            margin: 1pt auto !important; 
                         }
                         
-                        .school-name { font-size: 14pt; font-weight: bold; margin-bottom: 3pt; color: #001f3f; }
-                        .barcode-text { font-size: 10pt; font-weight: bold; font-family: 'Courier New', monospace; margin-top: 3pt; }
-                        .item-details { font-size: 10pt; margin-top: 2pt; }
+                        .school-name { font-size: 14pt !important; font-weight: bold !important; margin-bottom: 2pt !important; color: #001f3f !important; }
+                        .barcode-text { font-size: 10pt !important; font-weight: bold !important; font-family: 'Courier New', monospace !important; margin-top: 2pt !important; }
+                        .item-details { font-size: 10pt !important; margin-top: 1pt !important; }
                     }
                     `}
                 </style>
