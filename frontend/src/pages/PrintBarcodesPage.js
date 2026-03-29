@@ -58,7 +58,6 @@ function PrintBarcodesPage() {
 
     return (
         <Container className="mt-4 no-print-container" dir="rtl">
-            {/* واجهة المستخدم (تظهر فقط في المتصفح) */}
             <div className="no-print">
                 <h2 className="text-center mb-4 fw-bold">نظام إدارة ملصقات الزي</h2>
                 
@@ -94,18 +93,18 @@ function PrintBarcodesPage() {
 
                 <div className="d-flex justify-content-between mb-4 px-2">
                     <Button variant="success" className="px-4 fw-bold shadow-sm" onClick={() => window.print()} disabled={selectedIds.size === 0}>
-                        🟢 طباعة المختار ({selectedIds.size})
+                        🖨️ طباعة المختار ({selectedIds.size})
                     </Button>
                     <Button variant="outline-primary" className="px-4 fw-bold" onClick={handleSelectAll}>
                         {selectedIds.size === filteredItems.length ? 'إلغاء التحديد' : 'تحديد الكل'}
                     </Button>
                 </div>
 
-                <Row xs={1} md={2} lg={4} className="g-4 px-2">
+                <Row xs={1} md={2} lg={4} className="g-4 px-2 mb-5">
                     {filteredItems.map((item) => (
                         <Col key={item._id}>
                             <Card 
-                                className={`h-100 text-center p-3 border-2 shadow-sm transition-card ${selectedIds.has(item._id) ? 'border-primary bg-light' : 'border-light'}`} 
+                                className={`h-100 text-center p-3 border-2 shadow-sm ${selectedIds.has(item._id) ? 'border-primary bg-light' : 'border-light'}`} 
                                 onClick={() => handleSelectOne(item._id)} 
                                 style={{ cursor: 'pointer', borderRadius: '15px' }}
                             >
@@ -125,78 +124,21 @@ function PrintBarcodesPage() {
                 </Row>
             </div>
 
-            {/* منطقة الطباعة المخصصة (تظهر فقط عند الطباعة والمعاينة) */}
             <div className="print-area">
                 <style>
                     {`
                     @media print {
-                        @page { 
-                            size: letter portrait; 
-                            margin: 0.5in 0.15in; 
-                        }
-                        
-                        /* إخفاء واجهة الموقع تماماً */
-                        .no-print, .no-print-container, .navbar, header, footer { 
-                            display: none !important; 
-                        }
-                        
-                        /* إظهار منطقة الطباعة فقط */
-                        .print-area { 
-                            display: block !important; 
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            direction: rtl;
-                        }
-
-                        .labels-grid { 
-                            display: grid !important; 
-                            grid-template-columns: 4in 4in !important; 
-                            grid-auto-rows: 2in !important; 
-                            column-gap: 0.125in !important; 
-                            row-gap: 0 !important; 
-                            justify-content: center; 
-                        }
-
-                        .label-item { 
-                            width: 4in !important; 
-                            height: 2in !important; 
-                            padding: 0.15in; 
-                            text-align: center; 
-                            display: flex !important; 
-                            flex-direction: column !important; 
-                            align-items: center !important; 
-                            justify-content: center !important; 
-                            page-break-inside: avoid; 
-                        }
-
-                        .school-title { 
-                            font-size: 14pt !important; 
-                            font-weight: bold !important; 
-                            margin-bottom: 2pt; 
-                            color: #001f3f; 
-                        }
-
-                        .qr-print { 
-                            width: 1.1in !important; 
-                            height: 1.1in !important; 
-                        }
-
-                        .barcode-txt { 
-                            font-size: 10pt !important; 
-                            font-family: monospace !important; 
-                            font-weight: bold !important; 
-                            margin-top: 2pt; 
-                        }
-
-                        .details { 
-                            font-size: 9pt !important; 
-                            margin-top: 1pt; 
-                        }
+                        @page { size: letter portrait; margin: 0.5in 0.15in; }
+                        body { direction: rtl; background: white !important; }
+                        .no-print, .no-print-container, .navbar, header, footer { display: none !important; }
+                        .print-area { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
+                        .labels-grid { display: grid !important; grid-template-columns: 4in 4in !important; grid-auto-rows: 2in !important; column-gap: 0.125in !important; row-gap: 0 !important; justify-content: center; }
+                        .label-item { width: 4in !important; height: 2in !important; padding: 0.15in; text-align: center; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; page-break-inside: avoid; }
+                        .school-title { font-size: 14pt !important; font-weight: bold !important; margin-bottom: 2pt; color: #001f3f; }
+                        .qr-print { width: 1.1in !important; height: 1.1in !important; }
+                        .barcode-txt { font-size: 10pt !important; font-family: monospace !important; font-weight: bold !important; margin-top: 2pt; }
+                        .details { font-size: 9pt !important; margin-top: 1pt; }
                     }
-                    
-                    /* إخفاء منطقة الطباعة في المتصفح العادي */
                     .print-area { display: none; }
                     `}
                 </style>
