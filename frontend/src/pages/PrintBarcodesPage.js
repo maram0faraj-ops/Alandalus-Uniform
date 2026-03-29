@@ -56,8 +56,11 @@ function PrintBarcodesPage() {
 
     if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
 
+    const itemsToPrint = allItems.filter(i => selectedIds.has(i._id));
+
     return (
-        <Container className="mt-4 no-print-container" dir="rtl">
+        <Container className="mt-4" dir="rtl">
+            {/* واجهة التحكم - مخفية تماماً عند الطباعة */}
             <div className="no-print">
                 <h2 className="text-center mb-4 fw-bold">نظام إدارة ملصقات الزي</h2>
                 
@@ -124,26 +127,62 @@ function PrintBarcodesPage() {
                 </Row>
             </div>
 
-            <div className="print-area">
+            {/* منطقة الطباعة المحسنة */}
+            <div className="print-section">
                 <style>
                     {`
-                    @media print {
-                        @page { size: letter portrait; margin: 0.5in 0.15in; }
-                        body { direction: rtl; background: white !important; }
-                        .no-print, .no-print-container, .navbar, header, footer { display: none !important; }
-                        .print-area { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
-                        .labels-grid { display: grid !important; grid-template-columns: 4in 4in !important; grid-auto-rows: 2in !important; column-gap: 0.125in !important; row-gap: 0 !important; justify-content: center; }
-                        .label-item { width: 4in !important; height: 2in !important; padding: 0.15in; text-align: center; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; page-break-inside: avoid; }
-                        .school-title { font-size: 14pt !important; font-weight: bold !important; margin-bottom: 2pt; color: #001f3f; }
-                        .qr-print { width: 1.1in !important; height: 1.1in !important; }
-                        .barcode-txt { font-size: 10pt !important; font-family: monospace !important; font-weight: bold !important; margin-top: 2pt; }
-                        .details { font-size: 9pt !important; margin-top: 1pt; }
+                    @media screen {
+                        .print-section { display: none; }
                     }
-                    .print-area { display: none; }
+                    @media print {
+                        @page { 
+                            size: letter portrait; 
+                            margin: 0.5in 0.15in; 
+                        }
+                        
+                        /* القاعدة الذهبية لإصلاح الصفحة الفارغة */
+                        body * { visibility: hidden !important; }
+                        .print-section, .print-section * { 
+                            visibility: visible !important; 
+                        }
+                        .print-section {
+                            display: block !important;
+                            position: absolute !important;
+                            left: 0 !important;
+                            top: 0 !important;
+                            width: 100% !important;
+                        }
+
+                        .labels-grid { 
+                            display: grid !important; 
+                            grid-template-columns: 4in 4in !important; 
+                            grid-auto-rows: 2in !important; 
+                            column-gap: 0.125in !important; 
+                            row-gap: 0 !important; 
+                            justify-content: center !important; 
+                        }
+
+                        .label-item { 
+                            width: 4in !important; 
+                            height: 2in !important; 
+                            padding: 0.15in !important; 
+                            text-align: center !important; 
+                            display: flex !important; 
+                            flex-direction: column !important; 
+                            align-items: center !important; 
+                            justify-content: center !important; 
+                            page-break-inside: avoid !important;
+                        }
+
+                        .school-title { font-size: 14pt !important; font-weight: bold !important; margin-bottom: 2pt !important; color: #001f3f !important; }
+                        .qr-print { width: 1.1in !important; height: 1.1in !important; }
+                        .barcode-txt { font-size: 10pt !important; font-family: monospace !important; font-weight: bold !important; margin-top: 2pt !important; }
+                        .details { font-size: 9pt !important; margin-top: 1pt !important; }
+                    }
                     `}
                 </style>
                 <div className="labels-grid">
-                    {allItems.filter(i => selectedIds.has(i._id)).map((item) => (
+                    {itemsToPrint.map((item) => (
                         <div key={item._id} className="label-item">
                             <div className="school-title">مدارس الأندلس الأهلية</div>
                             <QRCodeSVG value={item.barcode} className="qr-print" level="H" includeMargin={false} />
