@@ -65,16 +65,16 @@ function PrintBarcodesPage() {
     return (
         <Container className="mt-4 no-print-container" dir="rtl">
             <div className="no-print">
-                <h2 className="mb-4">طباعة باركود الزي المدرسي (2" × 4")</h2>
+                <h2 className="mb-4 text-center">طباعة باركود الزي المدرسي (2" × 4")</h2>
                 
                 {error && <Alert variant="danger">{error}</Alert>}
 
-                <Card className="mb-4 shadow-sm">
+                <Card className="mb-4 shadow-sm border-0 bg-light">
                     <Card.Body>
                         <Row className="align-items-end g-3">
                             <Col md={3}>
                                 <Form.Group>
-                                    <Form.Label>المرحلة</Form.Label>
+                                    <Form.Label className="fw-bold">المرحلة</Form.Label>
                                     <Form.Select value={filters.stage} onChange={(e) => setFilters({...filters, stage: e.target.value})}>
                                         <option value="all">الكل</option>
                                         {filterOptions.stages.map(s => <option key={s} value={s}>{s}</option>)}
@@ -83,7 +83,7 @@ function PrintBarcodesPage() {
                             </Col>
                             <Col md={3}>
                                 <Form.Group>
-                                    <Form.Label>النوع</Form.Label>
+                                    <Form.Label className="fw-bold">النوع</Form.Label>
                                     <Form.Select value={filters.type} onChange={(e) => setFilters({...filters, type: e.target.value})}>
                                         <option value="all">الكل</option>
                                         {filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
@@ -92,7 +92,7 @@ function PrintBarcodesPage() {
                             </Col>
                             <Col md={3}>
                                 <Form.Group>
-                                    <Form.Label>المقاس</Form.Label>
+                                    <Form.Label className="fw-bold">المقاس</Form.Label>
                                     <Form.Select value={filters.size} onChange={(e) => setFilters({...filters, size: e.target.value})}>
                                         <option value="all">الكل</option>
                                         {filterOptions.sizes.map(z => <option key={z} value={z}>{z}</option>)}
@@ -100,31 +100,39 @@ function PrintBarcodesPage() {
                                 </Form.Group>
                             </Col>
                             <Col md={3} className="d-flex gap-2">
-                                <Button variant="primary" className="flex-grow-1" onClick={handlePrint} disabled={selectedIds.size === 0}>
+                                <Button variant="primary" className="flex-grow-1 fw-bold" onClick={handlePrint} disabled={selectedIds.size === 0}>
                                     🖨️ طباعة المحدد ({selectedIds.size})
                                 </Button>
-                                <Button variant="secondary" onClick={fetchData}>تحديث البيانات</Button>
+                                <Button variant="outline-secondary" onClick={fetchData}>تحديث البيانات</Button>
                             </Col>
                         </Row>
                     </Card.Body>
                 </Card>
 
-                <Table striped bordered hover responsive className="text-center align-middle">
-                    <thead>
+                <Table striped bordered hover responsive className="text-center align-middle bg-white shadow-sm">
+                    <thead className="table-dark">
                         <tr>
                             <th><Form.Check type="checkbox" onChange={handleSelectAll} checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length} /></th>
-                            <th>#</th><th>المرحلة</th><th>النوع</th><th>المقاس</th><th>الباركود</th><th>معاينة QR</th>
+                            <th>#</th>
+                            <th>المرحلة</th>
+                            <th>النوع</th>
+                            <th>المقاس</th>
+                            <th>الباركود</th>
+                            <th>معاينة QR</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredItems.map((item, index) => (
                             <tr key={item._id}>
                                 <td><Form.Check type="checkbox" checked={selectedIds.has(item._id)} onChange={() => handleSelectOne(item._id)} /></td>
-                                <td>{index + 1}</td><td>{item.uniform?.stage}</td><td>{item.uniform?.type}</td><td>{item.uniform?.size}</td>
+                                <td>{index + 1}</td>
+                                <td>{item.uniform?.stage}</td>
+                                <td>{item.uniform?.type}</td>
+                                <td>{item.uniform?.size}</td>
                                 <td className="font-monospace fw-bold">{item.barcode}</td>
                                 <td>
-                                    <div className="preview-qr-container p-1 border bg-light d-inline-block">
-                                        <QRCodeSVG value={item.barcode} size={60} level="M" />
+                                    <div className="p-1 border bg-light d-inline-block">
+                                        <QRCodeSVG value={item.barcode} size={50} level="M" />
                                     </div>
                                 </td>
                             </tr>
@@ -139,18 +147,18 @@ function PrintBarcodesPage() {
                     {`
                     @media print {
                         @page {
-                            size: letter portrait; /* الورق القياسي الأمريكي 8.5x11 إنش */
-                            margin: 0.5in 0.15in; /* هوامش علوية وجانبية دقيقة لهذا الموديل */
+                            size: letter portrait; 
+                            margin: 0.5in 0.15in; 
                         }
-                        body { margin: 0; padding: 0; background: white !important; direction: rtl; }
+                        body { margin: 0; padding: 0; background: white !important; direction: rtl; -webkit-print-color-adjust: exact; }
                         .no-print, .navbar, .no-print-container, header, footer { display: none !important; }
                         .print-area { display: block !important; width: 100%; }
                         
                         .labels-grid {
                             display: grid !important;
-                            grid-template-columns: 4in 4in !important; /* عمودين بعرض 4 إنش لكل ملصق */
-                            grid-auto-rows: 2in !important; /* ارتفاع 2 إنش لكل ملصق */
-                            column-gap: 0.125in !important; /* الفاصل الجانبي بين الملصقين */
+                            grid-template-columns: 4in 4in !important; 
+                            grid-auto-rows: 2in !important; 
+                            column-gap: 0.125in !important; 
                             row-gap: 0 !important;
                             justify-content: center;
                         }
@@ -167,11 +175,9 @@ function PrintBarcodesPage() {
                             text-align: center !important;
                             page-break-inside: avoid !important;
                             overflow: hidden !important;
-                            border: 0.1pt solid transparent; /* إطار وهمي للمعاينة فقط */
                         }
 
-                        /* حجم QR مناسب لمساحة 2 إنش × 4 إنش */
-                        .qr-svg { 
+                        .print-qr-svg { 
                             width: 1.1in !important; 
                             height: 1.1in !important; 
                             display: block !important;
@@ -191,7 +197,7 @@ function PrintBarcodesPage() {
                             <div className="school-name">مدارس الأندلس الأهلية - جدة</div>
                             <QRCodeSVG 
                                 value={item.barcode} 
-                                className="qr-svg" 
+                                className="print-qr-svg" 
                                 level="H" 
                                 includeMargin={false}
                             />
