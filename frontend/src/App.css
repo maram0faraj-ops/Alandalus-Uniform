@@ -1,98 +1,116 @@
-/* App.css المحدث بالكامل للطباعة الرباعية الاحترافية */
+/* App.css المحدث لملصقات MACO ML-1000 (10 ملصقات في الصفحة) */
+
 .App {
   text-align: center;
+  direction: rtl;
 }
 
 @media print {
+  /* إعدادات الصفحة القياسية للملصقات الأمريكية Letter */
   @page {
-    size: portrait;
-    margin: 5mm;
+    size: letter portrait;
+    margin: 0.5in 0.15in; /* هوامش علوية وجانبية دقيقة للموديل ML-1000 */
   }
 
-  /* إخفاء كل ما يسبب تداخل مع الملصقات */
+  /* إخفاء العناصر غير الضرورية للطباعة */
   .no-print, 
   .navbar, 
   header, 
   footer, 
-  .card-header, 
-  h1, h2, h3, h4, h5,
-  .system-title,
+  .btn,
+  .alert,
+  .card-header,
   .filter-section,
-  [class*="Header"] {
+  nav {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  .printable {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  body {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
   }
 
-  .printable .row {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
+  /* حاوية الشبكة الرئيسية للملصقات */
+  .labels-grid {
+    display: grid !important;
+    grid-template-columns: 4in 4in !important; /* عمودين بعرض 4 إنش لكل ملصق */
+    grid-auto-rows: 2in !important; /* ارتفاع الملصق 2 إنش */
+    column-gap: 0.125in !important; /* الفاصل الجانبي بين الملصقين */
+    row-gap: 0 !important;
+    justify-content: center !important;
     width: 100% !important;
-    margin: 0 !important;
+    page-break-after: always;
   }
 
-  /* تقسيم العرض لـ 4 ملصقات بدقة ومنع انقسامها */
-  .barcode-wrapper {
-    width: 25% !important; 
-    padding: 1mm !important;
+  /* تنسيق الملصق الواحد */
+  .label-item {
+    width: 4in !important;
+    height: 2in !important;
+    padding: 0.2in !important;
     box-sizing: border-box !important;
-    float: left !important;
-    page-break-inside: avoid !important; /* منع انقسام البطاقة بين صفحتين */
-  }
-
-  .barcode-card {
-    border: 1px dashed #ccc !important;
-    height: 6.8cm !important; /* ارتفاع ثابت لمنع التداخل */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 4mm !important;
-    box-sizing: border-box !important;
-    background-color: white !important;
+    justify-content: center !important;
+    text-align: center !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+    border: 0.1pt solid transparent !important; /* إطار وهمي للمعاينة فقط */
+  }
+
+  /* تنسيق المحتوى داخل الملصق */
+  .school-name { 
+    font-size: 14pt !important; 
+    font-weight: bold !important;
+    margin-bottom: 5pt !important;
+    color: #001f3f !important; /* لون كحلي لمطابقة هوية مدارس الأندلس */
   }
 
   .qr-container svg {
-    width: 4.2cm !important;
-    height: 4.2cm !important;
+    width: 1.1in !important; /* حجم QR مناسب لمساحة 2 إنش */
+    height: 1.1in !important;
   }
 
-  .school-name { 
-    font-size: 10pt !important; 
+  .barcode-text {
+    font-size: 10pt !important;
+    font-family: 'Courier New', monospace !important;
     font-weight: bold !important;
-    margin: 0 !important;
-    color: #000 !important;
+    margin-top: 2pt !important;
   }
 
   .item-details { 
-    font-size: 8pt !important; 
-    text-align: center !important;
-    margin: 0 !important;
+    font-size: 10pt !important; 
     line-height: 1.2 !important;
+    margin-top: 4pt !important;
     color: #000 !important;
   }
 }
 
-/* تنسيق العرض على المتصفح */
-.barcode-card {
+/* تنسيق العرض على المتصفح (المعاينة) */
+.labels-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+}
+
+.label-card-preview {
   border: 1px solid #ddd;
+  width: 350px;
+  height: 180px;
   padding: 15px;
   text-align: center;
-  margin-bottom: 10px;
   border-radius: 8px;
   background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  min-height: 260px;
+  justify-content: center;
 }
-.barcode-checkbox { position: absolute; top: 5px; right: 5px; }
