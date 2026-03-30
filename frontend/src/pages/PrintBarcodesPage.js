@@ -59,7 +59,7 @@ function PrintBarcodesPage() {
     const itemsToPrint = allItems.filter(i => selectedIds.has(i._id));
 
     return (
-        <Container className="mt-4" dir="rtl">
+        <Container className="mt-4" dir="rtl" style={{ maxWidth: '98%' }}>
             {/* واجهة التحكم - مخفية تماماً عند الطباعة */}
             <div className="no-print">
                 <h2 className="text-center mb-4 fw-bold">نظام إدارة ملصقات الزي</h2>
@@ -103,24 +103,25 @@ function PrintBarcodesPage() {
                     </Button>
                 </div>
 
-                <Row xs={1} md={2} lg={4} className="g-4 px-2 mb-5">
+                {/* تم تعديل lg={4} إلى lg={5} ليصبح عدد الباركود 5 في الصف الواحد */}
+                <Row xs={1} md={3} lg={5} className="g-3 px-2 mb-5">
                     {filteredItems.map((item) => (
                         <Col key={item._id}>
                             <Card 
-                                className={`h-100 text-center p-3 border-2 shadow-sm ${selectedIds.has(item._id) ? 'border-primary bg-light' : 'border-light'}`} 
+                                className={`h-100 text-center p-2 border-2 shadow-sm ${selectedIds.has(item._id) ? 'border-primary bg-light' : 'border-light'}`} 
                                 onClick={() => handleSelectOne(item._id)} 
                                 style={{ cursor: 'pointer', borderRadius: '15px' }}
                             >
-                                <div className="d-flex justify-content-center mb-2">
+                                <div className="d-flex justify-content-center mb-1">
                                     <Form.Check type="checkbox" checked={selectedIds.has(item._id)} readOnly />
                                 </div>
-                                <div className="fw-bold mb-1 small text-dark">مدارس الأندلس الأهلية</div>
-                                <div className="my-2 d-flex justify-content-center">
-                                    <QRCodeSVG value={item.barcode} size={110} />
+                                <div className="fw-bold mb-1" style={{ fontSize: '0.85rem' }}>مدارس الأندلس الأهلية</div>
+                                <div className="my-1 d-flex justify-content-center">
+                                    <QRCodeSVG value={item.barcode} size={90} />
                                 </div>
-                                <div className="font-monospace small fw-bold mb-1 text-primary">{item.barcode}</div>
-                                <div className="text-muted mb-1" style={{ fontSize: '0.8rem' }}>{item.uniform?.stage} - {item.uniform?.type}</div>
-                                <div className="fw-bold small bg-dark text-white d-inline-block px-3 py-1 rounded-pill">المقاس: {item.uniform?.size}</div>
+                                <div className="font-monospace fw-bold mb-1 text-primary" style={{ fontSize: '0.75rem' }}>{item.barcode}</div>
+                                <div className="text-muted mb-1" style={{ fontSize: '0.7rem' }}>{item.uniform?.stage} - {item.uniform?.type}</div>
+                                <div className="fw-bold bg-dark text-white d-inline-block px-2 py-1 rounded-pill" style={{ fontSize: '0.75rem' }}>المقاس: {item.uniform?.size}</div>
                             </Card>
                         </Col>
                     ))}
@@ -140,7 +141,6 @@ function PrintBarcodesPage() {
                             margin: 0.5in 0.15in; 
                         }
                         
-                        /* القاعدة الذهبية لإصلاح الصفحة الفارغة */
                         body * { visibility: hidden !important; }
                         .print-section, .print-section * { 
                             visibility: visible !important; 
