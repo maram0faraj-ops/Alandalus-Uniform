@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 // استبدلي هذا الرابط برابط الـ Cluster الجديد الخاص بكِ (مع كلمة المرور الصحيحة)
-const MONGODB_URI = "mongodb+srv://alandalus_user:NewPass2050@cluster0.6gks6nf.mongodb.net/?appName=Cluster0/test?retryWrites=true&w=majority";
+const MONGODB_URI = "mongodb+srv://alandalus_user:NewPass2050@cluster0.6gks6nf.mongodb.net/?appName=Cluster0";
 
 // تعريف موديل المستخدم مباشرة داخل السكربت لتجنب أخطاء المسارات
 const userSchema = new mongoose.Schema({
